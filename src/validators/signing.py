@@ -18,7 +18,6 @@ def get_validators_manager_signature(
         'types': {
             'VaultValidators': [
                 {'name': 'validatorsRegistryRoot', 'type': 'bytes32'},
-                {'name': 'vault', 'type': 'address'},
                 {'name': 'validators', 'type': 'bytes'},
             ],
         },
@@ -26,11 +25,10 @@ def get_validators_manager_signature(
             'name': 'VaultValidators',
             'version': '1',
             'chainId': settings.network_config.CHAIN_ID,
-            'verifyingContract': settings.network_config.VALIDATORS_CHECKER_CONTRACT_ADDRESS,
+            'verifyingContract': vault,
         },
         'message': {
             'validatorsRegistryRoot': Web3.to_bytes(hexstr=validators_registry_root),
-            'vault': vault,
             'validators': b''.join(encoded_validators),
         },
     }
