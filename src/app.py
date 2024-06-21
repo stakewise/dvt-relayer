@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncIterator
 
+import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
@@ -41,3 +42,7 @@ app.include_router(router)
 
 
 setup_sentry()
+
+
+if __name__ == '__main__':
+    uvicorn.run(app, host=settings.relayer_host, port=settings.relayer_port)

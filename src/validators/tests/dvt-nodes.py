@@ -19,9 +19,7 @@ from src.validators.utils import load_deposit_data
 setup_logging()
 
 logger = logging.getLogger(__name__)
-
-RELAYER_HOST = 'http://localhost'
-RELAYER_PORT = '8000'
+relayer_base_url = f'http://{settings.relayer_host}:{settings.relayer_port}'
 
 
 async def run_dvt_nodes():
@@ -98,7 +96,7 @@ async def poll_validators_and_push_signatures(
 
 async def poll_pending_validators(session):
     while True:
-        res = await session.get(f'{RELAYER_HOST}:{RELAYER_PORT}/validators')
+        res = await session.get(f'{relayer_base_url}/validators')
         res.raise_for_status()
         jsn = await res.json()
         if pending_validators := jsn['pending_validators']:
@@ -141,7 +139,7 @@ async def push_signature(
         'signature': Web3.to_hex(exit_signature),
     }
     logger.info('push exit signature for share_index %s', share_index)
-    res = await session.post(f'{RELAYER_HOST}:{RELAYER_PORT}/exit-signature', json=jsn)
+    res = await session.post(f'{relayer_base_url}/exit-signature', json=jsn)
     res.raise_for_status()
 
 
