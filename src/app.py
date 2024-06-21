@@ -11,8 +11,10 @@ from src.config import settings
 from src.validators.endpoints import router
 from src.validators.typings import AppState
 from src.validators.utils import load_deposit_data, load_validators_manager_account
+import logging
 
 setup_logging()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -20,7 +22,11 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator:  # pylint:disable=un
     validators = load_deposit_data(Path(settings.deposit_data_path))
     app_state = AppState()
     app_state.validators = validators
-    app_state.validators_manager_account = load_validators_manager_account()
+
+    validators_manager = load_validators_manager_account()
+    app_state.validators_manager_account = validators_manager
+    logger.info('validators manager address: %s', validators_manager.address)
+
     app_state.pending_validators = []
     app_state.exit_signature_shares = []
     app_state.exit_signatures = []
