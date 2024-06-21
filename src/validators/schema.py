@@ -14,7 +14,6 @@ class ExitSignatureShareResponse(BaseModel):
 
 class ValidatorsRequest(BaseModel):
     vault: ChecksumAddress
-    validators_registry_root: str
     validator_index: int
     validators_count: int
 

@@ -11,6 +11,10 @@ validators_manager_password_file: str = config('VALIDATORS_MANAGER_PASSWORD_FILE
 network: str = config('NETWORK')
 network_config = NETWORKS[network]
 
+execution_endpoint: str = config('EXECUTION_ENDPOINT')
+execution_timeout: int = config('EXECUTION_TIMEOUT', cast=int, default=60)
+execution_retry_timeout: int = config('EXECUTION_RETRY_TIMEOUT', cast=int, default=60)
+
 # logging
 LOG_PLAIN = 'plain'
 LOG_JSON = 'json'

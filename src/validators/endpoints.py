@@ -4,6 +4,7 @@ from eth_typing import BLSSignature, HexStr
 from fastapi import APIRouter, HTTPException
 from web3 import Web3
 
+from src.common.contracts import validators_registry_contract
 from src.config import settings
 from src.validators.key_shares import reconstruct_shared_bls_signature
 from src.validators.schema import (
@@ -56,9 +57,11 @@ async def create_validators_and_wait_for_signatures(
             )
         )
 
+    validators_registry_root = await validators_registry_contract.get_registry_root()
+
     validators_manager_signature = get_validators_manager_signature(
         Web3.to_checksum_address(request.vault),
-        HexStr(request.validators_registry_root),
+        Web3.to_hex(validators_registry_root),
         validators,
     )
     app_state.pending_validators = []
