@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 
 import aiohttp
+import decouple
 from aiohttp import ClientTimeout
 from eth_typing import BLSPubkey, BLSSignature, HexStr
 from sw_utils import ConsensusFork
@@ -19,7 +20,9 @@ from src.validators.utils import load_deposit_data
 setup_logging()
 
 logger = logging.getLogger(__name__)
-relayer_base_url = f'http://{settings.relayer_host}:{settings.relayer_port}'
+relayer_endpoint = decouple.config('RELAYER_ENDPOINT')
+cluster_path = decouple.config('CLUSTER_PATH')
+cluster_size = decouple.config('CLUSTER_SIZE', cast=int)
 
 
 async def run_dvt_nodes():
@@ -27,7 +30,7 @@ async def run_dvt_nodes():
     keystores = {}
     deposit_data = load_deposit_data(Path(settings.deposit_data_path))
 
-    for node_index in range(4):
+    for node_index in range(cluster_size):
         logger.info('load_keystore %s', node_index)
         keystore = await load_keystore(node_index)
         keystores[node_index] = keystore
@@ -62,7 +65,7 @@ def check_reconstruct_public_key(
 
 
 async def load_keystore(node_index: int) -> LocalKeystore:
-    dir_path = f'obol-cluster-{settings.network.lower()}/node{node_index}/validator_keys'
+    dir_path = f'{cluster_path}/node{node_index}/validator_keys'
     return await LocalKeystore.load(Path(dir_path))
 
 
@@ -96,7 +99,7 @@ async def poll_validators_and_push_signatures(
 
 async def poll_pending_validators(session):
     while True:
-        res = await session.get(f'{relayer_base_url}/validators')
+        res = await session.get(f'{relayer_endpoint}/validators')
         res.raise_for_status()
         jsn = await res.json()
         if pending_validators := jsn['pending_validators']:
@@ -139,7 +142,7 @@ async def push_signature(
         'signature': Web3.to_hex(exit_signature),
     }
     logger.info('push exit signature for share_index %s', share_index)
-    res = await session.post(f'{relayer_base_url}/exit-signature', json=jsn)
+    res = await session.post(f'{relayer_endpoint}/exit-signature', json=jsn)
     res.raise_for_status()
 
 

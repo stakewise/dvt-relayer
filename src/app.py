@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncIterator
@@ -11,7 +12,6 @@ from src.config import settings
 from src.validators.endpoints import router
 from src.validators.typings import AppState
 from src.validators.utils import load_deposit_data, load_validators_manager_account
-import logging
 
 setup_logging()
 logger = logging.getLogger(__name__)
