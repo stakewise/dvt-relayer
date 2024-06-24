@@ -1,9 +1,15 @@
 from dataclasses import dataclass
 
 from eth_account.signers.local import LocalAccount
-from eth_typing import BLSSignature, HexStr
+from eth_typing import BlockNumber, BLSSignature, HexStr
 
 from src.common.typings import Singleton
+
+
+@dataclass
+class NetworkValidator:
+    public_key: HexStr
+    block_number: BlockNumber
 
 
 @dataclass

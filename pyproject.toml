@@ -46,11 +46,14 @@ skips = ["B608"]
 
 [tool.pylint."pre-commit-hook"]
 disable = [
+    "C0103",  # invalid-name
     "C0114",  # missing-class-docstring
     "C0115",  # missing-class-docstring
     "C0116",  # missing-function-docstring
     "R0801",  # duplicate-code
-    "R0903"   # too-few-public-methods
+    "R0903",  # too-few-public-methods
+    "W0703",  # broad-except
+    "W0718"   # broad-exception-caught
 ]
 ignore-paths=["src/.*/tests/.*", "src/test_fixtures/.*"]
 ignore=["conftest.py"]

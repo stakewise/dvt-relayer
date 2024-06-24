@@ -5,6 +5,7 @@ from functools import cached_property
 from eth_typing import HexStr
 from sw_utils.typings import Bytes32
 from web3.contract import AsyncContract
+from web3.contract.async_contract import AsyncContractEvents, AsyncContractFunctions
 from web3.types import ChecksumAddress
 
 from src.common.clients import execution_client
@@ -25,6 +26,18 @@ class ContractWrapper:
         with open(os.path.join(current_dir, self.abi_path), encoding='utf-8') as f:
             abi = json.load(f)
         return execution_client.eth.contract(abi=abi, address=self.contract_address)
+
+    @property
+    def address(self) -> ChecksumAddress:
+        return self.contract.address
+
+    @property
+    def functions(self) -> AsyncContractFunctions:
+        return self.contract.functions
+
+    @property
+    def events(self) -> AsyncContractEvents:
+        return self.contract.events
 
     def encode_abi(self, fn_name: str, args: list | None = None) -> HexStr:
         return self.contract.encodeABI(fn_name=fn_name, args=args)

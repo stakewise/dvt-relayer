@@ -19,7 +19,6 @@ class JsonFormatter(jsonlogger.JsonFormatter):
             log_record['level'] = record.levelname
 
 
-# pylint: disable=invalid-name
 def setup_logging():
     if settings.log_format == LOG_JSON:
         formatter = JsonFormatter('%(timestamp)s %(level)s %(name)s %(message)s')
