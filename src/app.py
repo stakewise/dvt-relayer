@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -9,7 +10,9 @@ from starlette.middleware.cors import CORSMiddleware
 
 from src.common.setup_logging import setup_logging, setup_sentry
 from src.config import settings
+from src.validators.database import NetworkValidatorCrud
 from src.validators.endpoints import router
+from src.validators.tasks import NetworkValidatorsTask, load_genesis_validators
 from src.validators.typings import AppState
 from src.validators.utils import load_deposit_data, load_validators_manager_account
 
@@ -30,7 +33,16 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator:  # pylint:disable=un
     app_state.pending_validators = []
     app_state.exit_signature_shares = []
     app_state.exit_signatures = []
+
+    NetworkValidatorCrud().setup()
+    await load_genesis_validators()
+
+    # Creates a strong reference to the task. Helps to avoid garbage collecting.
+    network_validators_task = asyncio.create_task(NetworkValidatorsTask().run())
+
     yield
+
+    network_validators_task.cancel()
 
 
 app = FastAPI(lifespan=lifespan)

@@ -74,6 +74,3 @@ class AppState(metaclass=Singleton):
             if pv.public_key == public_key:
                 self.pending_validators.pop(index)
                 break
-
-    def get_available_validators(self, validators_count: int) -> list[Validator]:
-        return self.validators[:validators_count]

@@ -15,7 +15,7 @@ from src.validators.typings import NetworkValidator
 logger = logging.getLogger(__name__)
 
 
-class ValidatorsTask(BaseTask):
+class NetworkValidatorsTask(BaseTask):
     def __init__(self):
         network_validators_processor = NetworkValidatorsProcessor()
         self.network_validators_scanner = EventScanner(network_validators_processor)
@@ -42,6 +42,7 @@ async def load_genesis_validators() -> None:
         timeout=settings.genesis_validators_ipfs_timeout,
         retry_timeout=settings.genesis_validators_ipfs_retry_timeout,
     )
+    logger.info('Fetching genesis validators...')
     data = await ipfs_fetch_client.fetch_bytes(ipfs_hash)
     genesis_validators: list[NetworkValidator] = []
     logger.info('Loading genesis validators...')

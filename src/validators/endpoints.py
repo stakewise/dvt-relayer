@@ -6,6 +6,7 @@ from web3 import Web3
 
 from src.common.contracts import validators_registry_contract
 from src.config import settings
+from src.validators.database import NetworkValidatorCrud
 from src.validators.key_shares import reconstruct_shared_bls_signature
 from src.validators.schema import (
     ExitSignatureShareRequest,
@@ -22,6 +23,7 @@ from src.validators.typings import (
     ExitSignatureRow,
     ExitSignatureShareRow,
     PendingValidator,
+    Validator,
 )
 
 router = APIRouter()
@@ -34,9 +36,9 @@ async def create_validators_and_wait_for_signatures(
     app_state = AppState()
     validator_items = []
 
-    validators = app_state.get_available_validators(request.validators_count)
+    validators = _get_available_validators(request.validators_count)
     if not validators:
-        raise HTTPException(status_code=400)
+        raise HTTPException(status_code=400, detail='no available validators')
 
     app_state.pending_validators = []
     for validator_index, validator in enumerate(validators, request.validator_index):
@@ -70,6 +72,18 @@ async def create_validators_and_wait_for_signatures(
         validators=validator_items,
         validators_manager_signature=validators_manager_signature,
     )
+
+
+def _get_available_validators(validators_count: int) -> list[Validator]:
+    res = []
+    app_state = AppState()
+    for validator in app_state.validators:
+        if NetworkValidatorCrud().is_validator_registered(validator.public_key):
+            continue
+        res.append(validator)
+        if len(res) == validators_count:
+            break
+    return res
 
 
 @router.get('/validators')
