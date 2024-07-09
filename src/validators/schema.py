@@ -27,7 +27,9 @@ class ValidatorsResponseItem(BaseModel):
 
 class ValidatorsResponse(BaseModel):
     validators: list[ValidatorsResponseItem]
-    validators_manager_signature: HexStr
+    proof: list[HexStr]
+    proof_flags: list[bool]
+    proof_indexes: list[int]
 
 
 class PendingValidatorResponseItem(BaseModel):

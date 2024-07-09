@@ -1,7 +1,9 @@
 from dataclasses import dataclass
+from typing import Sequence
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, BLSSignature, HexStr
+from multiproof import StandardMerkleTree
 
 from src.common.typings import Singleton
 
@@ -15,9 +17,17 @@ class NetworkValidator:
 @dataclass
 class Validator:
     public_key: HexStr
+    withdrawal_credentials: HexStr
     deposit_data_root: HexStr
     deposit_signature: HexStr
     amount_gwei: int
+    deposit_data_index: int
+
+
+@dataclass
+class DepositData:
+    validators: Sequence[Validator]
+    tree: StandardMerkleTree
 
 
 @dataclass
@@ -40,14 +50,14 @@ class ExitSignatureRow:
 
 
 class AppState(metaclass=Singleton):
-    validators: list[Validator]
+    deposit_data: DepositData
     validators_manager_account: LocalAccount
     pending_validators: list[PendingValidator]
     exit_signature_shares: list[ExitSignatureShareRow]
     exit_signatures: list[ExitSignatureRow]
 
     def get_validator(self, public_key: str) -> Validator | None:
-        for validator in self.validators:
+        for validator in self.deposit_data.validators:
             if validator.public_key == public_key:
                 return validator
         return None

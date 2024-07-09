@@ -57,7 +57,7 @@ repos:
         language: system
         types: [ python ]
         require_serial: true
-        exclude: "test"
+        exclude: "test_"
 
   - repo: local
     hooks:

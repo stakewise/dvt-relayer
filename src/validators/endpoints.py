@@ -4,10 +4,10 @@ from eth_typing import BLSSignature, HexStr
 from fastapi import APIRouter, HTTPException
 from web3 import Web3
 
-from src.common.contracts import validators_registry_contract
 from src.config import settings
 from src.validators.database import NetworkValidatorCrud
 from src.validators.key_shares import reconstruct_shared_bls_signature
+from src.validators.proof import _calc_leaf_indexes, get_validators_proof
 from src.validators.schema import (
     ExitSignatureShareRequest,
     ExitSignatureShareResponse,
@@ -17,7 +17,6 @@ from src.validators.schema import (
     ValidatorsResponse,
     ValidatorsResponseItem,
 )
-from src.validators.signing import get_validators_manager_signature
 from src.validators.typings import (
     AppState,
     ExitSignatureRow,
@@ -59,25 +58,24 @@ async def create_validators_and_wait_for_signatures(
             )
         )
 
-    validators_registry_root = await validators_registry_contract.get_registry_root()
-
-    validators_manager_signature = get_validators_manager_signature(
-        Web3.to_checksum_address(request.vault),
-        Web3.to_hex(validators_registry_root),
-        validators,
-    )
     app_state.pending_validators = []
+
+    multi_proof = get_validators_proof(app_state.deposit_data.tree, validators)
+    deposit_data_indexes = [leaf[1] for leaf in multi_proof.leaves]
+    leaf_indexes = _calc_leaf_indexes(deposit_data_indexes)
 
     return ValidatorsResponse(
         validators=validator_items,
-        validators_manager_signature=validators_manager_signature,
+        proof=multi_proof.proof,
+        proof_flags=multi_proof.proof_flags,
+        proof_indexes=leaf_indexes,
     )
 
 
 def _get_available_validators(validators_count: int) -> list[Validator]:
     res = []
     app_state = AppState()
-    for validator in app_state.validators:
+    for validator in app_state.deposit_data.validators:
         if NetworkValidatorCrud().is_validator_registered(validator.public_key):
             continue
         res.append(validator)

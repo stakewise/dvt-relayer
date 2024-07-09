@@ -14,7 +14,7 @@ from src.validators.database import NetworkValidatorCrud
 from src.validators.endpoints import router
 from src.validators.tasks import NetworkValidatorsTask, load_genesis_validators
 from src.validators.typings import AppState
-from src.validators.utils import load_deposit_data, load_validators_manager_account
+from src.validators.utils import load_deposit_data
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -22,13 +22,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI) -> AsyncIterator:  # pylint:disable=unused-argument
-    validators = load_deposit_data(Path(settings.deposit_data_path))
+    deposit_data = load_deposit_data(Path(settings.deposit_data_path))
     app_state = AppState()
-    app_state.validators = validators
-
-    validators_manager = load_validators_manager_account()
-    app_state.validators_manager_account = validators_manager
-    logger.info('validators manager address: %s', validators_manager.address)
+    app_state.deposit_data = deposit_data
 
     app_state.pending_validators = []
     app_state.exit_signature_shares = []
