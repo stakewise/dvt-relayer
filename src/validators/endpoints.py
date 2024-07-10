@@ -7,7 +7,7 @@ from web3 import Web3
 from src.config import settings
 from src.validators.database import NetworkValidatorCrud
 from src.validators.key_shares import reconstruct_shared_bls_signature
-from src.validators.proof import _calc_leaf_indexes, get_validators_proof
+from src.validators.proof import get_validators_proof
 from src.validators.schema import (
     ExitSignatureShareRequest,
     ExitSignatureShareResponse,
@@ -62,13 +62,12 @@ async def create_validators_and_wait_for_signatures(
 
     multi_proof = get_validators_proof(app_state.deposit_data.tree, validators)
     deposit_data_indexes = [leaf[1] for leaf in multi_proof.leaves]
-    leaf_indexes = _calc_leaf_indexes(deposit_data_indexes)
 
     return ValidatorsResponse(
         validators=validator_items,
         proof=multi_proof.proof,
         proof_flags=multi_proof.proof_flags,
-        proof_indexes=leaf_indexes,
+        proof_indexes=deposit_data_indexes,
     )
 
 

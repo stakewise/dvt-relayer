@@ -37,11 +37,3 @@ def encode_tx_validator(validator: Validator) -> bytes:
         signature=signature,
     ).hash_tree_root
     return public_key + signature + deposit_root
-
-
-def _calc_leaf_indexes(deposit_data_indexes: list[int]) -> list[int]:
-    if not deposit_data_indexes:
-        return []
-
-    sorted_indexes = sorted(deposit_data_indexes)
-    return [deposit_data_indexes.index(index) for index in sorted_indexes]
