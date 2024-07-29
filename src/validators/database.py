@@ -35,16 +35,6 @@ class NetworkValidatorCrud:
                 return NetworkValidator(public_key=res[0], block_number=res[1])
             return None
 
-    def is_validator_registered(self, public_key: HexStr) -> bool:
-        """Checks whether validator is registered."""
-        network_validators_table = self.NETWORK_VALIDATORS_TABLE
-        with db_client.get_db_connection() as conn:
-            res = conn.execute(
-                f'SELECT public_key FROM {network_validators_table} WHERE (public_key = ?)',
-                (public_key,),
-            )
-            return res.fetchone() is not None
-
     def get_next_validator_index(self, latest_public_keys: list[HexStr]) -> int:
         """Retrieves the index for the next validator."""
         with db_client.get_db_connection() as conn:

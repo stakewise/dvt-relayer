@@ -1,7 +1,6 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import AsyncIterator
 
 import uvicorn
@@ -14,7 +13,6 @@ from src.validators.database import NetworkValidatorCrud
 from src.validators.endpoints import router
 from src.validators.tasks import NetworkValidatorsTask, load_genesis_validators
 from src.validators.typings import AppState
-from src.validators.utils import load_deposit_data
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -22,13 +20,9 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app_instance: FastAPI) -> AsyncIterator:  # pylint:disable=unused-argument
-    deposit_data = load_deposit_data(Path(settings.deposit_data_path))
     app_state = AppState()
-    app_state.deposit_data = deposit_data
 
-    app_state.pending_validators = []
-    app_state.exit_signature_shares = []
-    app_state.exit_signatures = []
+    app_state.pending_validators = {}
 
     NetworkValidatorCrud().setup()
     await load_genesis_validators()

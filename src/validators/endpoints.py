@@ -1,13 +1,10 @@
-import asyncio
-
 from eth_typing import BLSSignature, HexStr
 from fastapi import APIRouter, HTTPException
 from web3 import Web3
 
 from src.config import settings
-from src.validators.database import NetworkValidatorCrud
+from src.validators.execution import get_start_validator_index
 from src.validators.key_shares import reconstruct_shared_bls_signature
-from src.validators.proof import get_validators_proof
 from src.validators.schema import (
     ExitSignatureShareRequest,
     ExitSignatureShareResponse,
@@ -17,13 +14,8 @@ from src.validators.schema import (
     ValidatorsResponse,
     ValidatorsResponseItem,
 )
-from src.validators.typings import (
-    AppState,
-    ExitSignatureRow,
-    ExitSignatureShareRow,
-    PendingValidator,
-    Validator,
-)
+from src.validators.typings import AppState, ExitSignatureShareRow, PendingValidator
+from src.validators.utils import to_hex_or_none
 
 router = APIRouter()
 
@@ -35,52 +27,36 @@ async def create_validators_and_wait_for_signatures(
     app_state = AppState()
     validator_items = []
 
-    validators = _get_available_validators(request.validators_count)
-    if not validators:
-        raise HTTPException(status_code=400, detail='no available validators')
+    validator_index = None
+    exit_signatures_ready = True
 
-    app_state.pending_validators = []
-    for validator_index, validator in enumerate(validators, request.validator_index):
-        app_state.pending_validators.append(
-            PendingValidator(public_key=validator.public_key, validator_index=validator_index)
-        )
+    for public_key in request.public_keys:
+        validator = app_state.pending_validators.get(public_key)
+        if validator is None:
+            if validator_index is None:
+                validator_index = await get_start_validator_index()
 
-    for validator in validators:
-        while (exit_signature := app_state.get_exit_signature(validator.public_key)) is None:
-            await asyncio.sleep(1)
+            validator = PendingValidator(
+                public_key=public_key,
+                validator_index=validator_index,
+            )
+            app_state.pending_validators[public_key] = validator
+            validator_index += 1
+
+        if validator.exit_signature is None:
+            exit_signatures_ready = False
 
         validator_items.append(
             ValidatorsResponseItem(
                 public_key=validator.public_key,
-                deposit_signature=validator.deposit_signature,
-                amount_gwei=validator.amount_gwei,
-                exit_signature=Web3.to_hex(exit_signature),
+                exit_signature=to_hex_or_none(validator.exit_signature),
             )
         )
 
-    app_state.pending_validators = []
-
-    multi_proof = get_validators_proof(app_state.deposit_data.tree, validators)
-    deposit_data_indexes = [leaf[1] for leaf in multi_proof.leaves]
-
     return ValidatorsResponse(
+        ready=exit_signatures_ready,
         validators=validator_items,
-        proof=multi_proof.proof,
-        proof_flags=multi_proof.proof_flags,
-        proof_indexes=deposit_data_indexes,
     )
-
-
-def _get_available_validators(validators_count: int) -> list[Validator]:
-    res = []
-    app_state = AppState()
-    for validator in app_state.deposit_data.validators:
-        if NetworkValidatorCrud().is_validator_registered(validator.public_key):
-            continue
-        res.append(validator)
-        if len(res) == validators_count:
-            break
-    return res
 
 
 @router.get('/validators')
@@ -88,7 +64,7 @@ async def get_pending_validators() -> PendingValidatorResponse:
     app_state = AppState()
     response = PendingValidatorResponse(pending_validators=[])
 
-    for pv in app_state.pending_validators:
+    for pv in app_state.pending_validators.values():
         response.pending_validators.append(
             PendingValidatorResponseItem(
                 public_key=pv.public_key, validator_index=pv.validator_index
@@ -102,15 +78,19 @@ async def create_exit_signature_share(
     request: ExitSignatureShareRequest,
 ) -> ExitSignatureShareResponse:
     app_state = AppState()
-    validator = app_state.get_validator(request.public_key)
+    validator = app_state.pending_validators.get(request.public_key)
     if validator is None:
         raise HTTPException(status_code=400)
 
-    current_share = app_state.get_exit_signature_share(request.public_key, request.share_index)
+    validator = app_state.pending_validators.get(request.public_key)
+    if validator is None:
+        return ExitSignatureShareResponse()
+
+    current_share = validator.get_exit_signature_share(request.public_key, request.share_index)
     if current_share:
         return ExitSignatureShareResponse()
 
-    app_state.exit_signature_shares.append(
+    validator.exit_signature_shares.append(
         ExitSignatureShareRow(
             public_key=request.public_key,
             share_index=request.share_index,
@@ -118,18 +98,11 @@ async def create_exit_signature_share(
         )
     )
 
-    signature_shares = app_state.get_exit_signature_shares(request.public_key)
-    if len(signature_shares) < settings.signature_threshold:
+    if len(validator.exit_signature_shares) < settings.signature_threshold:
         return ExitSignatureShareResponse()
 
-    signature = reconstruct_shared_bls_signature(
-        {s.share_index: s.signature for s in signature_shares}
+    validator.exit_signature = reconstruct_shared_bls_signature(
+        {s.share_index: s.signature for s in validator.exit_signature_shares}
     )
-
-    if signature is not None:
-        app_state.exit_signatures.append(
-            ExitSignatureRow(public_key=request.public_key, signature=signature)
-        )
-        app_state.remove_pending_validator(request.public_key)
 
     return ExitSignatureShareResponse()

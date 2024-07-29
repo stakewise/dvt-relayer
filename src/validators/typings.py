@@ -1,9 +1,7 @@
-from dataclasses import dataclass
-from typing import Sequence
+from dataclasses import dataclass, field
 
 from eth_account.signers.local import LocalAccount
 from eth_typing import BlockNumber, BLSSignature, HexStr
-from multiproof import StandardMerkleTree
 
 from src.common.typings import Singleton
 
@@ -15,28 +13,6 @@ class NetworkValidator:
 
 
 @dataclass
-class Validator:
-    public_key: HexStr
-    withdrawal_credentials: HexStr
-    deposit_data_root: HexStr
-    deposit_signature: HexStr
-    amount_gwei: int
-    deposit_data_index: int
-
-
-@dataclass
-class DepositData:
-    validators: Sequence[Validator]
-    tree: StandardMerkleTree
-
-
-@dataclass
-class PendingValidator:
-    public_key: HexStr
-    validator_index: int
-
-
-@dataclass
 class ExitSignatureShareRow:
     public_key: HexStr
     share_index: int
@@ -44,23 +20,11 @@ class ExitSignatureShareRow:
 
 
 @dataclass
-class ExitSignatureRow:
+class PendingValidator:
     public_key: HexStr
-    signature: BLSSignature
-
-
-class AppState(metaclass=Singleton):
-    deposit_data: DepositData
-    validators_manager_account: LocalAccount
-    pending_validators: list[PendingValidator]
-    exit_signature_shares: list[ExitSignatureShareRow]
-    exit_signatures: list[ExitSignatureRow]
-
-    def get_validator(self, public_key: str) -> Validator | None:
-        for validator in self.deposit_data.validators:
-            if validator.public_key == public_key:
-                return validator
-        return None
+    validator_index: int
+    exit_signature_shares: list[ExitSignatureShareRow] = field(default_factory=list)
+    exit_signature: BLSSignature | None = None
 
     def get_exit_signature_share(
         self, public_key: HexStr, share_index: int
@@ -70,17 +34,11 @@ class AppState(metaclass=Singleton):
                 return share
         return None
 
+
+class AppState(metaclass=Singleton):
+    validators_manager_account: LocalAccount
+    pending_validators: dict[HexStr, PendingValidator]
+    exit_signature_shares: list[ExitSignatureShareRow]
+
     def get_exit_signature_shares(self, public_key: HexStr) -> list[ExitSignatureShareRow]:
         return [s for s in self.exit_signature_shares if s.public_key == public_key]
-
-    def get_exit_signature(self, public_key: HexStr) -> BLSSignature | None:
-        for row in self.exit_signatures:
-            if row.public_key == public_key:
-                return row.signature
-        return None
-
-    def remove_pending_validator(self, public_key: HexStr) -> None:
-        for index, pv in enumerate(self.pending_validators):
-            if pv.public_key == public_key:
-                self.pending_validators.pop(index)
-                break

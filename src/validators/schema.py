@@ -1,4 +1,4 @@
-from eth_typing import ChecksumAddress, HexStr
+from eth_typing import HexStr
 from pydantic import BaseModel
 
 
@@ -13,23 +13,17 @@ class ExitSignatureShareResponse(BaseModel):
 
 
 class ValidatorsRequest(BaseModel):
-    vault: ChecksumAddress
-    validator_index: int
-    validators_count: int
+    public_keys: list[HexStr]
 
 
 class ValidatorsResponseItem(BaseModel):
     public_key: HexStr
-    deposit_signature: HexStr
-    amount_gwei: int
-    exit_signature: HexStr
+    exit_signature: HexStr | None
 
 
 class ValidatorsResponse(BaseModel):
+    ready: bool
     validators: list[ValidatorsResponseItem]
-    proof: list[HexStr]
-    proof_flags: list[bool]
-    proof_indexes: list[int]
 
 
 class PendingValidatorResponseItem(BaseModel):
