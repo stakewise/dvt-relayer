@@ -31,8 +31,14 @@ ipfs_fetch_endpoints: list[str] = config(
         ]
     ),
 )
-genesis_validators_ipfs_timeout: int = config('IPFS_TIMEOUT', default=300, cast=int)
-genesis_validators_ipfs_retry_timeout: int = config('IPFS_RETRY_TIMEOUT', default=600, cast=int)
+ipfs_timeout: int = config('IPFS_TIMEOUT', default=60, cast=int)
+ipfs_retry_timeout: int = config('IPFS_RETRY_TIMEOUT', default=120, cast=int)
+genesis_validators_ipfs_timeout: int = config(
+    'GENESIS_VALIDATORS_IPFS_TIMEOUT', default=300, cast=int
+)
+genesis_validators_ipfs_retry_timeout: int = config(
+    'GENESIS_VALIDATORS_IPFS_RETRY_TIMEOUT', default=600, cast=int
+)
 
 database: str = config('DATABASE')
 

@@ -11,8 +11,6 @@ import aiohttp
 from aiohttp import ClientTimeout
 from decouple import config
 from eth_typing import BLSPubkey, BLSSignature, HexStr
-from sw_utils import ConsensusFork
-from sw_utils.typings import Bytes32
 from web3 import Web3
 
 from src.common.setup_logging import setup_logging
@@ -123,19 +121,8 @@ async def poll_pending_validators(session):
 async def get_exit_signature(
     keystore: LocalKeystore, validator_index: int, public_key: HexStr
 ) -> BLSSignature:
-    # holesky
-    SHAPELLA_FORK_VERSION = Web3.to_bytes(hexstr=HexStr('0x04017000'))
-    SHAPELLA_EPOCH = 256
-    genesis_validators_root = Bytes32(
-        Web3.to_bytes(
-            hexstr=HexStr('0x9143aa7c615a7f7115e2b6aac319c03529df8242ae705fba9df39b79c59fa8b1')
-        )
-    )
-
-    fork = ConsensusFork(
-        version=SHAPELLA_FORK_VERSION,
-        epoch=SHAPELLA_EPOCH,
-    )
+    fork = settings.network_config.SHAPELLA_FORK
+    genesis_validators_root = settings.network_config.GENESIS_VALIDATORS_ROOT
 
     return await keystore.get_exit_signature(
         validator_index, public_key, fork, genesis_validators_root

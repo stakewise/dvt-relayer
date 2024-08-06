@@ -7,12 +7,13 @@ import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
+from src.app_state import AppState
 from src.common.setup_logging import setup_logging, setup_sentry
 from src.config import settings
+from src.protocol_config.tasks import ProtocolConfigTask, update_protocol_config
 from src.validators.database import NetworkValidatorCrud
 from src.validators.endpoints import router
 from src.validators.tasks import NetworkValidatorsTask, load_genesis_validators
-from src.validators.typings import AppState
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -27,12 +28,18 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator:  # pylint:disable=un
     NetworkValidatorCrud().setup()
     await load_genesis_validators()
 
-    # Creates a strong reference to the task. Helps to avoid garbage collecting.
+    logger.info('Init protocol config...')
+    await update_protocol_config()
+    logger.info('Protocol config is ready')
+
+    # Note: we create a strong references to the tasks. Helps to avoid garbage collecting.
+    protocol_config_task = asyncio.create_task(ProtocolConfigTask().run())
     network_validators_task = asyncio.create_task(NetworkValidatorsTask().run())
 
     yield
 
     network_validators_task.cancel()
+    protocol_config_task.cancel()
 
 
 app = FastAPI(lifespan=lifespan)

@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-from sw_utils import get_consensus_client, get_execution_client
+from sw_utils import IpfsFetchClient, get_consensus_client, get_execution_client
 
 from src.config import settings
 
@@ -26,3 +26,9 @@ class Database:
 
 
 db_client = Database()
+
+ipfs_fetch_client = IpfsFetchClient(
+    ipfs_endpoints=settings.ipfs_fetch_endpoints,
+    timeout=settings.ipfs_timeout,
+    retry_timeout=settings.ipfs_retry_timeout,
+)
