@@ -92,8 +92,8 @@ async def poll_validators_and_push_signatures(
     async with aiohttp.ClientSession(timeout=ClientTimeout(5)) as session:
         while True:
             try:
-                pending_validators = await poll_pending_validators(session)
-                for pv in pending_validators:
+                validators = await poll_validators(session)
+                for pv in validators:
                     if pv['public_key'] in pushed_public_keys:
                         continue
                     pub_key_share = pub_key_to_share[pv['public_key']]
@@ -108,13 +108,13 @@ async def poll_validators_and_push_signatures(
             await asyncio.sleep(1)
 
 
-async def poll_pending_validators(session):
+async def poll_validators(session):
     while True:
         res = await session.get(f'{relayer_endpoint}/validators')
         res.raise_for_status()
         jsn = await res.json()
-        if pending_validators := jsn['pending_validators']:
-            return pending_validators
+        if validators := jsn['validators']:
+            return validators
         await asyncio.sleep(1)
 
 

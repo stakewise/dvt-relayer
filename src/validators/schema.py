@@ -7,7 +7,7 @@ if TYPE_CHECKING:
     from src.validators.typings import (
         OraclesExitSignatureShares as OraclesSharesDataclass,
     )
-    from src.validators.typings import PendingValidator
+    from src.validators.typings import Validator
 
 
 class ExitSignatureShareRequest(BaseModel):
@@ -24,17 +24,17 @@ class ValidatorsRequest(BaseModel):
     public_keys: list[HexStr]
 
 
-class ValidatorsResponseItem(BaseModel):
+class CreateValidatorsResponseItem(BaseModel):
     public_key: HexStr
     oracles_exit_signature_shares: Union['OraclesExitSignatureShares', None]
 
     @staticmethod
-    def from_validator(v: 'PendingValidator') -> 'ValidatorsResponseItem':
+    def from_validator(v: 'Validator') -> 'CreateValidatorsResponseItem':
         oracles_exit_signature_shares = None
         if shares := v.oracles_exit_signature_shares:
             oracles_exit_signature_shares = OraclesExitSignatureShares.from_dataclass(shares)
 
-        return ValidatorsResponseItem(
+        return CreateValidatorsResponseItem(
             public_key=v.public_key, oracles_exit_signature_shares=oracles_exit_signature_shares
         )
 
@@ -51,15 +51,15 @@ class OraclesExitSignatureShares(BaseModel):
         )
 
 
-class ValidatorsResponse(BaseModel):
+class CreateValidatorsResponse(BaseModel):
     ready: bool
-    validators: list[ValidatorsResponseItem]
+    validators: list[CreateValidatorsResponseItem]
 
 
-class PendingValidatorResponseItem(BaseModel):
+class ValidatorsResponseItem(BaseModel):
     public_key: HexStr
     validator_index: int
 
 
-class PendingValidatorResponse(BaseModel):
-    pending_validators: list[PendingValidatorResponseItem]
+class ValidatorResponse(BaseModel):
+    validators: list[ValidatorsResponseItem]

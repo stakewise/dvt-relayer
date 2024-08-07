@@ -10,21 +10,21 @@ from src.validators.oracle_shares import get_oracles_exit_signature_shares
 from src.validators.schema import (
     ExitSignatureShareRequest,
     ExitSignatureShareResponse,
-    PendingValidatorResponse,
-    PendingValidatorResponseItem,
-    ValidatorsRequest,
-    ValidatorsResponse,
+    ValidatorResponse,
     ValidatorsResponseItem,
+    ValidatorsRequest,
+    CreateValidatorsResponse,
+    CreateValidatorsResponseItem,
 )
-from src.validators.typings import ExitSignatureShareRow, PendingValidator
+from src.validators.typings import Validator
 
 router = APIRouter()
 
 
 @router.post('/validators')
-async def create_validators_and_wait_for_signatures(
+async def create_validators(
     request: ValidatorsRequest,
-) -> ValidatorsResponse:
+) -> CreateValidatorsResponse:
     app_state = AppState()
     validator_items = []
 
@@ -32,37 +32,37 @@ async def create_validators_and_wait_for_signatures(
     exit_signatures_ready = True
 
     for public_key in request.public_keys:
-        validator = app_state.pending_validators.get(public_key)
+        validator = app_state.validators.get(public_key)
         if validator is None:
             if validator_index is None:
                 validator_index = await get_start_validator_index()
 
-            validator = PendingValidator(
+            validator = Validator(
                 public_key=public_key,
                 validator_index=validator_index,
             )
-            app_state.pending_validators[public_key] = validator
+            app_state.validators[public_key] = validator
             validator_index += 1
 
         if validator.exit_signature is None:
             exit_signatures_ready = False
 
-        validator_items.append(ValidatorsResponseItem.from_validator(validator))
+        validator_items.append(CreateValidatorsResponseItem.from_validator(validator))
 
-    return ValidatorsResponse(
+    return CreateValidatorsResponse(
         ready=exit_signatures_ready,
         validators=validator_items,
     )
 
 
 @router.get('/validators')
-async def get_pending_validators() -> PendingValidatorResponse:
+async def get_validators() -> ValidatorResponse:
     app_state = AppState()
-    response = PendingValidatorResponse(pending_validators=[])
+    response = ValidatorResponse(validators=[])
 
-    for pv in app_state.pending_validators.values():
-        response.pending_validators.append(
-            PendingValidatorResponseItem(
+    for pv in app_state.validators.values():
+        response.validators.append(
+            ValidatorsResponseItem(
                 public_key=pv.public_key, validator_index=pv.validator_index
             )
         )
@@ -74,32 +74,26 @@ async def create_exit_signature_share(
     request: ExitSignatureShareRequest,
 ) -> ExitSignatureShareResponse:
     app_state = AppState()
-    validator = app_state.pending_validators.get(request.public_key)
+    validator = app_state.validators.get(request.public_key)
     if validator is None:
         raise HTTPException(status_code=400)
 
-    validator = app_state.pending_validators.get(request.public_key)
+    validator = app_state.validators.get(request.public_key)
     if validator is None:
         return ExitSignatureShareResponse()
 
-    current_share = validator.get_exit_signature_share(request.public_key, request.share_index)
+    current_share = validator.exit_signature_shares.get(request.share_index)
     if current_share:
         return ExitSignatureShareResponse()
 
-    validator.exit_signature_shares.append(
-        ExitSignatureShareRow(
-            public_key=request.public_key,
-            share_index=request.share_index,
-            signature=BLSSignature(Web3.to_bytes(hexstr=HexStr(request.signature))),
-        )
+    validator.exit_signature_shares[request.share_index] = BLSSignature(
+        Web3.to_bytes(hexstr=HexStr(request.signature))
     )
 
     if len(validator.exit_signature_shares) < settings.signature_threshold:
         return ExitSignatureShareResponse()
 
-    validator.exit_signature = reconstruct_shared_bls_signature(
-        {s.share_index: s.signature for s in validator.exit_signature_shares}
-    )
+    validator.exit_signature = reconstruct_shared_bls_signature(validator.exit_signature_shares)
     oracles_shares = await get_oracles_exit_signature_shares(
         public_key=validator.public_key,
         validator_index=validator.validator_index,

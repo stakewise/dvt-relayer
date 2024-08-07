@@ -23,12 +23,12 @@ logger = logging.getLogger(__name__)
 async def lifespan(app_instance: FastAPI) -> AsyncIterator:  # pylint:disable=unused-argument
     app_state = AppState()
 
-    app_state.pending_validators = {}
+    app_state.validators = {}
 
     NetworkValidatorCrud().setup()
     await load_genesis_validators()
 
-    logger.info('Init protocol config...')
+    logger.info('Fetching protocol config...')
     await update_protocol_config()
     logger.info('Protocol config is ready')
 
