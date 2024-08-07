@@ -52,3 +52,5 @@ log_format: str = config('LOG_FORMAT', default=LOG_PLAIN)
 
 sentry_dsn: str = config('SENTRY_DSN', default='')
 sentry_environment = config('SENTRY_ENVIRONMENT', default='')
+
+VALIDATOR_LIFETIME: int = config('VALIDATOR_LIFETIME', default=3600, cast=int)

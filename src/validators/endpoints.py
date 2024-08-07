@@ -1,5 +1,7 @@
+from time import time
+
 from eth_typing import BLSSignature, HexStr
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from web3 import Web3
 
 from src.app_state import AppState
@@ -8,13 +10,13 @@ from src.validators.execution import get_start_validator_index
 from src.validators.key_shares import reconstruct_shared_bls_signature
 from src.validators.oracle_shares import get_oracles_exit_signature_shares
 from src.validators.schema import (
+    CreateValidatorsResponse,
+    CreateValidatorsResponseItem,
     ExitSignatureShareRequest,
     ExitSignatureShareResponse,
     ValidatorResponse,
-    ValidatorsResponseItem,
     ValidatorsRequest,
-    CreateValidatorsResponse,
-    CreateValidatorsResponseItem,
+    ValidatorsResponseItem,
 )
 from src.validators.typings import Validator
 
@@ -30,6 +32,7 @@ async def create_validators(
 
     validator_index = None
     exit_signatures_ready = True
+    now = int(time())
 
     for public_key in request.public_keys:
         validator = app_state.validators.get(public_key)
@@ -40,6 +43,7 @@ async def create_validators(
             validator = Validator(
                 public_key=public_key,
                 validator_index=validator_index,
+                created_at=now,
             )
             app_state.validators[public_key] = validator
             validator_index += 1
@@ -62,9 +66,7 @@ async def get_validators() -> ValidatorResponse:
 
     for pv in app_state.validators.values():
         response.validators.append(
-            ValidatorsResponseItem(
-                public_key=pv.public_key, validator_index=pv.validator_index
-            )
+            ValidatorsResponseItem(public_key=pv.public_key, validator_index=pv.validator_index)
         )
     return response
 
@@ -74,10 +76,6 @@ async def create_exit_signature_share(
     request: ExitSignatureShareRequest,
 ) -> ExitSignatureShareResponse:
     app_state = AppState()
-    validator = app_state.validators.get(request.public_key)
-    if validator is None:
-        raise HTTPException(status_code=400)
-
     validator = app_state.validators.get(request.public_key)
     if validator is None:
         return ExitSignatureShareResponse()

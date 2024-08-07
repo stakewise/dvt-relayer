@@ -14,6 +14,7 @@ class NetworkValidator:
 class Validator:
     public_key: HexStr
     validator_index: int
+    created_at: int
     exit_signature: BLSSignature | None = None
 
     # DVT operators' shares

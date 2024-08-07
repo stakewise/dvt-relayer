@@ -13,7 +13,11 @@ from src.config import settings
 from src.protocol_config.tasks import ProtocolConfigTask, update_protocol_config
 from src.validators.database import NetworkValidatorCrud
 from src.validators.endpoints import router
-from src.validators.tasks import NetworkValidatorsTask, load_genesis_validators
+from src.validators.tasks import (
+    CleanupValidatorsTask,
+    NetworkValidatorsTask,
+    load_genesis_validators,
+)
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -35,11 +39,13 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator:  # pylint:disable=un
     # Note: we create a strong references to the tasks. Helps to avoid garbage collecting.
     protocol_config_task = asyncio.create_task(ProtocolConfigTask().run())
     network_validators_task = asyncio.create_task(NetworkValidatorsTask().run())
+    cleanup_validators_task = asyncio.create_task(CleanupValidatorsTask().run())
 
     yield
 
-    network_validators_task.cancel()
     protocol_config_task.cancel()
+    network_validators_task.cancel()
+    cleanup_validators_task.cancel()
 
 
 app = FastAPI(lifespan=lifespan)
