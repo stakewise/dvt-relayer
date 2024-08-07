@@ -44,7 +44,7 @@ async def run_dvt_nodes():
     check_reconstruct_public_key(public_keys, keystores)
 
     for node_index, keystore in keystores.items():
-        asyncio.create_task(poll_validators_and_push_signatures(public_keys, keystore, node_index))
+        asyncio.create_task(poll_exits_and_push_signatures(public_keys, keystore, node_index))
 
     # Keep tasks running
     while True:
@@ -83,7 +83,7 @@ def load_cluster_lock() -> dict:
     return json.load(open(cluster_lock_path))
 
 
-async def poll_validators_and_push_signatures(
+async def poll_exits_and_push_signatures(
     public_keys: Sequence[HexStr], keystore: LocalKeystore, node_index: int
 ) -> None:
     pushed_public_keys = set()
@@ -92,29 +92,29 @@ async def poll_validators_and_push_signatures(
     async with aiohttp.ClientSession(timeout=ClientTimeout(5)) as session:
         while True:
             try:
-                validators = await poll_validators(session)
-                for pv in validators:
-                    if pv['public_key'] in pushed_public_keys:
+                exits = await poll_exits(session)
+                for exit in exits:
+                    if exit['public_key'] in pushed_public_keys:
                         continue
-                    pub_key_share = pub_key_to_share[pv['public_key']]
+                    pub_key_share = pub_key_to_share[exit['public_key']]
                     exit_signature = await get_exit_signature(
-                        keystore, pv['validator_index'], pub_key_share
+                        keystore, exit['validator_index'], pub_key_share
                     )
-                    await push_signature(session, pv['public_key'], exit_signature, node_index)
-                    pushed_public_keys.add(pv['public_key'])
+                    await push_signature(session, exit['public_key'], exit_signature, node_index)
+                    pushed_public_keys.add(exit['public_key'])
             except Exception as e:
                 logger.exception('')
                 logger.error(repr(e))
             await asyncio.sleep(1)
 
 
-async def poll_validators(session):
+async def poll_exits(session):
     while True:
-        res = await session.get(f'{relayer_endpoint}/validators')
+        res = await session.get(f'{relayer_endpoint}/exits')
         res.raise_for_status()
         jsn = await res.json()
-        if validators := jsn['validators']:
-            return validators
+        if exits := jsn['exits']:
+            return exits
         await asyncio.sleep(1)
 
 

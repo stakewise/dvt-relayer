@@ -56,10 +56,14 @@ class CreateValidatorsResponse(BaseModel):
     validators: list[CreateValidatorsResponseItem]
 
 
-class ValidatorsResponseItem(BaseModel):
+class ExitsResponseItem(BaseModel):
     public_key: HexStr
     validator_index: int
 
+    @staticmethod
+    def from_validator(v: 'Validator') -> 'ExitsResponseItem':
+        return ExitsResponseItem(public_key=v.public_key, validator_index=v.validator_index)
 
-class ValidatorResponse(BaseModel):
-    validators: list[ValidatorsResponseItem]
+
+class ExitsResponse(BaseModel):
+    exits: list[ExitsResponseItem]

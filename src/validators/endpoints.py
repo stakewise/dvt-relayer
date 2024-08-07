@@ -14,9 +14,9 @@ from src.validators.schema import (
     CreateValidatorsResponseItem,
     ExitSignatureShareRequest,
     ExitSignatureShareResponse,
-    ValidatorResponse,
+    ExitsResponse,
+    ExitsResponseItem,
     ValidatorsRequest,
-    ValidatorsResponseItem,
 )
 from src.validators.typings import Validator
 
@@ -59,15 +59,13 @@ async def create_validators(
     )
 
 
-@router.get('/validators')
-async def get_validators() -> ValidatorResponse:
+@router.get('/exits')
+async def get_exits() -> ExitsResponse:
     app_state = AppState()
-    response = ValidatorResponse(validators=[])
+    response = ExitsResponse(exits=[])
 
-    for pv in app_state.validators.values():
-        response.validators.append(
-            ValidatorsResponseItem(public_key=pv.public_key, validator_index=pv.validator_index)
-        )
+    for validator in app_state.validators.values():
+        response.exits.append(ExitsResponseItem.from_validator(validator))
     return response
 
 
