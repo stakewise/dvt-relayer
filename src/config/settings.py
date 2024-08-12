@@ -1,6 +1,6 @@
 from decouple import Csv, config
 
-from src.config.networks import NETWORKS
+from src.config.networks import NETWORKS, NetworkConfig
 
 relayer_host: str = config('RELAYER_HOST', default='127.0.0.1')
 relayer_port: int = config('RELAYER_PORT', cast=int, default=8000)
@@ -8,7 +8,7 @@ relayer_port: int = config('RELAYER_PORT', cast=int, default=8000)
 signature_threshold: int = config('SIGNATURE_THRESHOLD', cast=int)
 
 network: str = config('NETWORK')
-network_config = NETWORKS[network]
+network_config: NetworkConfig = NETWORKS[network]
 
 execution_endpoint: str = config('EXECUTION_ENDPOINT')
 execution_timeout: int = config('EXECUTION_TIMEOUT', cast=int, default=60)

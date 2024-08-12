@@ -35,9 +35,13 @@ In production environment:
 
 ### Test
 
-Running all DVT operator sidecar instances locally may be cumbersome.
-Run convenience script `src/validators/tests/dvt-nodes.py` to simulate DVT sidecars.
-The script:
+Running the whole cluster of DVT sidecars locally may be cumbersome.
+For testing purpose single sidecar may work on behalf of several DVT operators.
+To do that you have to fill `SHARE_INDEXES` in sidecar's environment. For example:
+```text
+SHARE_INDEXES=1,2,3,4
+```
+DVT sidecar:
 1. Loads DV keystores
 2. Polls validator exits from Relayer
-3. Pushes exit signature shares to Relayer on behalf of all DVT operators.
+3. Pushes exit signature shares to Relayer on behalf of DVT operators.

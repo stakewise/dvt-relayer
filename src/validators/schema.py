@@ -63,13 +63,10 @@ class CreateValidatorsResponse(BaseModel):
 class ExitsResponseItem(BaseModel):
     public_key: HexStr
     validator_index: int
-    created_at: int
 
     @staticmethod
     def from_validator(v: 'Validator') -> 'ExitsResponseItem':
-        return ExitsResponseItem(
-            public_key=v.public_key, validator_index=v.validator_index, created_at=v.created_at
-        )
+        return ExitsResponseItem(public_key=v.public_key, validator_index=v.validator_index)
 
 
 class ExitsResponse(BaseModel):
