@@ -10,10 +10,14 @@ if TYPE_CHECKING:
     from src.validators.typings import Validator
 
 
-class ExitSignatureShareRequest(BaseModel):
+class ExitSignatureShareRequestItem(BaseModel):
     public_key: HexStr
+    exit_signature: HexStr
+
+
+class ExitSignatureShareRequest(BaseModel):
     share_index: int
-    signature: HexStr
+    shares: list[ExitSignatureShareRequestItem]
 
 
 class ExitSignatureShareResponse(BaseModel):
@@ -59,10 +63,13 @@ class CreateValidatorsResponse(BaseModel):
 class ExitsResponseItem(BaseModel):
     public_key: HexStr
     validator_index: int
+    created_at: int
 
     @staticmethod
     def from_validator(v: 'Validator') -> 'ExitsResponseItem':
-        return ExitsResponseItem(public_key=v.public_key, validator_index=v.validator_index)
+        return ExitsResponseItem(
+            public_key=v.public_key, validator_index=v.validator_index, created_at=v.created_at
+        )
 
 
 class ExitsResponse(BaseModel):

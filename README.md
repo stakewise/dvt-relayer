@@ -1,6 +1,6 @@
 # DVT-relayer
 
-DVT Relayer is a service providing validators' registration data to Stakewise v3-operator 
+DVT Relayer is a service providing validators' registration data to Stakewise v3-operator
 in DVT setup.
 
 As a general introduction in DVT read [the article](https://ethereum.org/en/staking/dvt/) on Ethereum web-site.
@@ -13,7 +13,7 @@ Distributed validator (DV) keystores are used:
 * for Relayer testing
 
 The easiest way to generate DV keys for testing is [Obol launchpad](https://holesky.launchpad.obol.org/).
-Works for Holesky, Mainnet and Gnosis. 
+Works for Holesky, Mainnet and Gnosis.
 Select "Create a distributed validator alone". Follow instructions. Use vault address as withdrawal address.
 
 In production environment:
@@ -35,7 +35,7 @@ In production environment:
 
 ### Test
 
-Running all DVT operator sidecar instances locally may be cumbersome. 
+Running all DVT operator sidecar instances locally may be cumbersome.
 Run convenience script `src/validators/tests/dvt-nodes.py` to simulate DVT sidecars.
 The script:
 1. Loads DV keystores

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Sequence
 
 import aiohttp
-from aiohttp import ClientTimeout
+from aiohttp import ClientResponseError, ClientTimeout
 from decouple import config
 from eth_typing import BLSPubkey, BLSSignature, HexStr
 from web3 import Web3
@@ -23,6 +23,8 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 relayer_endpoint = config('RELAYER_ENDPOINT')
+relayer_timeout = config('RELAYER_TIMEOUT', cast=int, default=10)
+relayer_poll_interval = config('RELAYER_POLL_INTERVAL', cast=int, default=1)
 cluster_path = Path(config('CLUSTER_PATH'))
 cluster_size = config('CLUSTER_SIZE', cast=int)
 
@@ -86,26 +88,38 @@ def load_cluster_lock() -> dict:
 async def poll_exits_and_push_signatures(
     public_keys: Sequence[HexStr], keystore: LocalKeystore, node_index: int
 ) -> None:
-    pushed_public_keys = set()
+    public_key_to_created_at: dict[HexStr, int] = dict()
     pub_key_to_share = dict(zip(public_keys, keystore.public_keys))
 
-    async with aiohttp.ClientSession(timeout=ClientTimeout(5)) as session:
+    async with aiohttp.ClientSession(timeout=ClientTimeout(relayer_timeout)) as session:
         while True:
             try:
                 exits = await poll_exits(session)
+            except (ClientResponseError, asyncio.TimeoutError):
+                logger.exception('Failed to push exit signature')
+
+            public_key_to_exit_signature: dict[HexStr, HexStr] = {}
+            for exit in exits:
+                public_key = exit['public_key']
+                if public_key_to_created_at[public_key] >= exit['created_at']:
+                    continue
+
+                pub_key_share = pub_key_to_share[public_key]
+                exit_signature = await keystore.get_exit_signature(
+                    exit['validator_index'],
+                    pub_key_share,
+                    settings.network_config.SHAPELLA_FORK,
+                    settings.network_config.GENESIS_VALIDATORS_ROOT,
+                )
+                public_key_to_exit_signature[public_key] = Web3.to_hex(exit_signature)
+
+            if public_key_to_exit_signature:
+                await push_exit_signature(session, public_key_to_exit_signature, node_index)
                 for exit in exits:
-                    if exit['public_key'] in pushed_public_keys:
-                        continue
-                    pub_key_share = pub_key_to_share[exit['public_key']]
-                    exit_signature = await get_exit_signature(
-                        keystore, exit['validator_index'], pub_key_share
-                    )
-                    await push_signature(session, exit['public_key'], exit_signature, node_index)
-                    pushed_public_keys.add(exit['public_key'])
-            except Exception as e:
-                logger.exception('')
-                logger.error(repr(e))
-            await asyncio.sleep(1)
+                    public_key = exit['public_key']
+                    public_key_to_created_at[public_key] = exit['created_at']
+
+            await asyncio.sleep(relayer_poll_interval)
 
 
 async def poll_exits(session):
@@ -129,18 +143,21 @@ async def get_exit_signature(
     )
 
 
-async def push_signature(
+async def push_exit_signature(
     session: aiohttp.ClientSession,
-    public_key: HexStr,
-    exit_signature: BLSSignature,
+    public_key_to_exit_signature: dict[HexStr, HexStr],
     node_index: int,
 ) -> None:
     share_index = node_index + 1
-    jsn = {
-        'public_key': public_key,
-        'share_index': share_index,
-        'signature': Web3.to_hex(exit_signature),
-    }
+    shares = []
+    for public_key, exit_signature in public_key_to_exit_signature.items():
+        shares.append(
+            {
+                'public_key': public_key,
+                'exit_signature': exit_signature,
+            }
+        )
+    jsn = {'share_index': share_index, 'shares': shares}
     logger.info('push exit signature for share_index %s', share_index)
     res = await session.post(f'{relayer_endpoint}/exit-signature', json=jsn)
     res.raise_for_status()

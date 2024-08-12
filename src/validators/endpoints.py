@@ -70,31 +70,33 @@ async def get_exits() -> ExitsResponse:
 
 
 @router.post('/exit-signature')
-async def create_exit_signature_share(
+async def create_exit_signature_shares(
     request: ExitSignatureShareRequest,
 ) -> ExitSignatureShareResponse:
     app_state = AppState()
-    validator = app_state.validators.get(request.public_key)
-    if validator is None:
-        return ExitSignatureShareResponse()
 
-    current_share = validator.exit_signature_shares.get(request.share_index)
-    if current_share:
-        return ExitSignatureShareResponse()
+    for share in request.shares:
+        validator = app_state.validators.get(share.public_key)
+        if validator is None:
+            continue
 
-    validator.exit_signature_shares[request.share_index] = BLSSignature(
-        Web3.to_bytes(hexstr=HexStr(request.signature))
-    )
+        current_share = validator.exit_signature_shares.get(request.share_index)
+        if current_share:
+            continue
 
-    if len(validator.exit_signature_shares) < settings.signature_threshold:
-        return ExitSignatureShareResponse()
+        validator.exit_signature_shares[request.share_index] = BLSSignature(
+            Web3.to_bytes(hexstr=HexStr(share.exit_signature))
+        )
 
-    validator.exit_signature = reconstruct_shared_bls_signature(validator.exit_signature_shares)
-    oracles_shares = await get_oracles_exit_signature_shares(
-        public_key=validator.public_key,
-        validator_index=validator.validator_index,
-        exit_signature=validator.exit_signature,
-    )
-    validator.oracles_exit_signature_shares = oracles_shares
+        if len(validator.exit_signature_shares) < settings.signature_threshold:
+            continue
+
+        validator.exit_signature = reconstruct_shared_bls_signature(validator.exit_signature_shares)
+        oracles_shares = await get_oracles_exit_signature_shares(
+            public_key=validator.public_key,
+            validator_index=validator.validator_index,
+            exit_signature=validator.exit_signature,
+        )
+        validator.oracles_exit_signature_shares = oracles_shares
 
     return ExitSignatureShareResponse()
