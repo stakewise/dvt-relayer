@@ -1,4 +1,5 @@
 import ecies
+import milagro_bls_binding as bls
 from eth_typing import BLSPubkey, BLSSignature, HexStr
 from sw_utils import ConsensusFork, get_exit_message_signing_root
 from web3 import Web3
@@ -58,3 +59,20 @@ def encrypt_signatures_list(
 
 def encrypt_signature(oracle_pubkey: HexStr, signature: BLSSignature) -> HexStr:
     return Web3.to_hex(ecies.encrypt(oracle_pubkey, signature))
+
+
+def validate_exit_signature(
+    public_key: HexStr,
+    validator_index: int,
+    exit_signature: BLSSignature,
+) -> bool:
+    genesis_validators_root = settings.network_config.GENESIS_VALIDATORS_ROOT
+    fork = settings.network_config.SHAPELLA_FORK
+
+    message = get_exit_message_signing_root(
+        validator_index=validator_index,
+        genesis_validators_root=genesis_validators_root,
+        fork=fork,
+    )
+
+    return bls.Verify(Web3.to_bytes(hexstr=public_key), message, exit_signature)

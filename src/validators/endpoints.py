@@ -1,16 +1,17 @@
 from time import time
 
-import milagro_bls_binding as bls
 from eth_typing import BLSSignature, HexStr
 from fastapi import APIRouter
-from sw_utils import get_exit_message_signing_root
 from web3 import Web3
 
 from src.app_state import AppState
 from src.config import settings
 from src.validators.execution import get_start_validator_index
+from src.validators.exit_signature import (
+    get_oracles_exit_signature_shares,
+    validate_exit_signature,
+)
 from src.validators.key_shares import reconstruct_shared_bls_signature
-from src.validators.oracle_shares import get_oracles_exit_signature_shares
 from src.validators.schema import (
     CreateValidatorsResponse,
     CreateValidatorsResponseItem,
@@ -96,7 +97,7 @@ async def create_exit_signature_shares(
             continue
 
         exit_signature = reconstruct_shared_bls_signature(validator.exit_signature_shares)
-        if not _validate_exit_signature(
+        if not validate_exit_signature(
             validator.public_key, validator.validator_index, exit_signature
         ):
             raise RuntimeError('invalid exit signature')
@@ -111,20 +112,3 @@ async def create_exit_signature_shares(
         validator.oracles_exit_signature_shares = oracles_shares
 
     return ExitSignatureShareResponse()
-
-
-def _validate_exit_signature(
-    public_key: HexStr,
-    validator_index: int,
-    exit_signature: BLSSignature,
-) -> bool:
-    genesis_validators_root = settings.network_config.GENESIS_VALIDATORS_ROOT
-    fork = settings.network_config.SHAPELLA_FORK
-
-    message = get_exit_message_signing_root(
-        validator_index=validator_index,
-        genesis_validators_root=genesis_validators_root,
-        fork=fork,
-    )
-
-    return bls.Verify(Web3.to_bytes(hexstr=public_key), message, exit_signature)
