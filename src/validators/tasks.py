@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 class NetworkValidatorsTask(BaseTask):
-    def __init__(self):
+    def __init__(self) -> None:
         network_validators_processor = NetworkValidatorsProcessor()
         self.network_validators_scanner = EventScanner(network_validators_processor)
 

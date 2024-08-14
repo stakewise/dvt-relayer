@@ -20,7 +20,7 @@ class NetworkValidatorsProcessor(EventProcessor):
     contract_event = 'DepositEvent'
 
     @property
-    def contract(self):
+    def contract(self):  # type: ignore
         return validators_registry_contract
 
     @staticmethod
@@ -93,7 +93,7 @@ async def get_latest_network_validator_public_keys() -> Set[HexStr]:
     return new_public_keys
 
 
-async def get_start_validator_index():
+async def get_start_validator_index() -> int:
     latest_public_keys = await get_latest_network_validator_public_keys()
     start_validator_index = NetworkValidatorCrud().get_next_validator_index(
         list(latest_public_keys)
