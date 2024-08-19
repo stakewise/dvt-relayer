@@ -41,6 +41,7 @@ To do that you have to fill `SHARE_INDEXES` in sidecar's environment. For exampl
 ```text
 SHARE_INDEXES=1,2,3,4
 ```
+
 DVT sidecar:
 1. Loads DV keystores
 2. Polls validator exits from Relayer
