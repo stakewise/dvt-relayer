@@ -1,7 +1,10 @@
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Annotated, Union
 
+from annotated_types import Ge
 from eth_typing import HexStr
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+from src.validators.fields import BLSPubkeyField, BLSSignatureField
 
 if TYPE_CHECKING:
     from src.validators.typings import (
@@ -11,13 +14,20 @@ if TYPE_CHECKING:
 
 
 class ExitSignatureShareRequestItem(BaseModel):
-    public_key: HexStr
-    exit_signature: HexStr
+    public_key: BLSPubkeyField
+    exit_signature: BLSSignatureField
 
 
 class ExitSignatureShareRequest(BaseModel):
-    share_index: int
+    share_index: Annotated[int, Ge(0)]
     shares: list[ExitSignatureShareRequestItem]
+
+    @field_validator('shares')
+    @classmethod
+    def shares_nonempty(cls, v: list) -> list:
+        if not v:
+            raise ValueError('list must be non-empty')
+        return v
 
 
 class ExitSignatureShareResponse(BaseModel):
@@ -25,7 +35,14 @@ class ExitSignatureShareResponse(BaseModel):
 
 
 class ValidatorsRequest(BaseModel):
-    public_keys: list[HexStr]
+    public_keys: list[BLSPubkeyField]
+
+    @field_validator('public_keys')
+    @classmethod
+    def public_keys_nonempty(cls, v: list) -> list:
+        if not v:
+            raise ValueError('list must be non-empty')
+        return v
 
 
 class CreateValidatorsResponseItem(BaseModel):
