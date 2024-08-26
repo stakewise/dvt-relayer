@@ -33,15 +33,12 @@ async def create_validators(
     app_state = AppState()
     validator_items = []
 
-    validator_index = None
+    validator_index = await get_validators_start_index()
     exit_signatures_ready = True
     now = int(time())
 
     for public_key in request.public_keys:
         validator = app_state.validators.get(public_key)
-
-        if validator_index is None:
-            validator_index = await get_validators_start_index()
 
         if validator is None or validator.validator_index != validator_index:
             validator = Validator(
