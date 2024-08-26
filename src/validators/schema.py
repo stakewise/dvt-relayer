@@ -80,10 +80,15 @@ class CreateValidatorsResponse(BaseModel):
 class ExitsResponseItem(BaseModel):
     public_key: HexStr
     validator_index: int
+    is_exit_signature_ready: bool
 
     @staticmethod
     def from_validator(v: 'Validator') -> 'ExitsResponseItem':
-        return ExitsResponseItem(public_key=v.public_key, validator_index=v.validator_index)
+        return ExitsResponseItem(
+            public_key=v.public_key,
+            validator_index=v.validator_index,
+            is_exit_signature_ready=bool(v.exit_signature),
+        )
 
 
 class ExitsResponse(BaseModel):
