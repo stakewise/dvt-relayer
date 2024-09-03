@@ -24,7 +24,6 @@ ipfs_fetch_endpoints: list[str] = config(
     default=','.join(
         [
             'https://stakewise-v3.infura-ipfs.io',
-            'http://cloudflare-ipfs.com',
             'https://gateway.pinata.cloud',
             'https://ipfs.io',
         ]
