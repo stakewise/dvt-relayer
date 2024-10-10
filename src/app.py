@@ -8,11 +8,12 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from src.app_state import AppState
+from src.common.endpoints import router as common_router
 from src.common.setup_logging import setup_logging, setup_sentry
 from src.config import settings
 from src.protocol_config.tasks import ProtocolConfigTask, update_protocol_config
 from src.validators.database import NetworkValidatorCrud
-from src.validators.endpoints import router
+from src.validators.endpoints import router as validators_router
 from src.validators.tasks import (
     CleanupValidatorsTask,
     NetworkValidatorsTask,
@@ -59,7 +60,8 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
-app.include_router(router)
+app.include_router(validators_router)
+app.include_router(common_router)
 
 
 setup_sentry()
