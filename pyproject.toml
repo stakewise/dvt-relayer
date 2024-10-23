@@ -111,3 +111,11 @@ exclude = '''
 
 [tool.coverage.report]
 fail_under = 73
+
+[tool.vulture]
+exclude = ["*/test*", "conftest.py", "networks.py"]
+ignore_decorators = ["@router.*", "@app.*", "@field_validator"]
+ignore_names = [
+    "contract_event", "get_from_block", "process_events",  # event processor
+]
+min_confidence = 80

@@ -1,5 +1,4 @@
 import sqlite3
-from pathlib import Path
 from sqlite3 import Connection
 
 from sw_utils import IpfsFetchClient, get_consensus_client, get_execution_client
@@ -21,9 +20,6 @@ consensus_client = get_consensus_client(
 class Database:
     def get_db_connection(self) -> Connection:
         return sqlite3.connect(settings.database)
-
-    def create_db_dir(self) -> None:
-        Path(settings.database).parent.mkdir(parents=True, exist_ok=True)
 
 
 db_client = Database()
