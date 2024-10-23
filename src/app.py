@@ -12,6 +12,7 @@ from starlette.requests import Request
 from src.app_state import AppState
 from src.common.endpoints import router as common_router
 from src.common.setup_logging import setup_logging, setup_sentry
+from src.common.utils import get_project_version
 from src.config import settings
 from src.protocol_config.tasks import ProtocolConfigTask, update_protocol_config
 from src.validators.database import NetworkValidatorCrud
@@ -27,7 +28,12 @@ logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app_instance: FastAPI) -> AsyncIterator:  # pylint:disable=unused-argument
+async def lifespan(app_instance: FastAPI) -> AsyncIterator:
+    del app_instance  # mute linters, unused argument error
+
+    version = get_project_version()
+    logger.info('Starting DVT Relayer service %s', version)
+
     app_state = AppState()
 
     app_state.validators = {}
