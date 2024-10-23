@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Annotated, Union
 
 from annotated_types import Ge
@@ -81,6 +82,9 @@ class ExitsResponseItem(BaseModel):
     public_key: HexStr
     validator_index: int
     is_exit_signature_ready: bool
+    created_at_timestamp: int
+    created_at_string: str
+    share_indexes_ready: list[int]
 
     @staticmethod
     def from_validator(v: 'Validator') -> 'ExitsResponseItem':
@@ -88,6 +92,11 @@ class ExitsResponseItem(BaseModel):
             public_key=v.public_key,
             validator_index=v.validator_index,
             is_exit_signature_ready=bool(v.exit_signature),
+            created_at_timestamp=v.created_at,
+            created_at_string=datetime.fromtimestamp(v.created_at, timezone.utc).strftime(
+                '%Y-%m-%d %H:%M:%S%z'
+            ),
+            share_indexes_ready=sorted(list(v.exit_signature_shares.keys())),
         )
 
 

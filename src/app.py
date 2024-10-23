@@ -1,11 +1,13 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-from typing import AsyncIterator
+from time import time
+from typing import AsyncIterator, Callable
 
 import uvicorn
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import Request
 
 from src.app_state import AppState
 from src.common.endpoints import router as common_router
@@ -59,6 +61,17 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
+
+
+@app.middleware('http')
+async def log_request_processing_time(request: Request, call_next: Callable) -> None:
+    start = time()
+    try:
+        return await call_next(request)
+    finally:
+        elapsed = time() - start
+        logger.info('Request processing time for path %s is %.1f', request.url.path, elapsed)
+
 
 app.include_router(validators_router)
 app.include_router(common_router)
