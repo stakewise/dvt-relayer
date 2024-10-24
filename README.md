@@ -25,7 +25,7 @@ In production environment:
 ## Setup
 
 1. Install [poetry](https://python-poetry.org/)
-2. `poetry install`
+2. Install dependencies: `poetry install`
 3. `cp .env.example .env`
 4. Fill .env file with appropriate values
 
@@ -39,11 +39,7 @@ In production environment:
 
 Running the whole cluster of DVT sidecars locally may be cumbersome.
 For testing purpose single sidecar may work on behalf of several DVT operators.
-To do that you have to fill `SHARE_INDEXES` in sidecar's environment. For example:
-
-```text
-SHARE_INDEXES=1,2,3,4
-```
+See [DVT sidecar readme](https://github.com/stakewise/dvt-operator-sidecar/blob/main/README.md) for details.
 
 DVT sidecar:
 
