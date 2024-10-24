@@ -2,8 +2,7 @@ import json
 import os
 from functools import cached_property
 
-from eth_typing import BlockNumber, HexStr
-from sw_utils.typings import Bytes32
+from eth_typing import BlockNumber
 from web3.contract import AsyncContract
 from web3.contract.async_contract import (
     AsyncContractEvent,
@@ -37,9 +36,6 @@ class ContractWrapper:
     def events(self) -> AsyncContractEvents:
         return self.contract.events
 
-    def encode_abi(self, fn_name: str, args: list | None = None) -> HexStr:
-        return self.contract.encodeABI(fn_name=fn_name, args=args)
-
     @property
     def events_blocks_range_interval(self) -> int:
         return 43200 // settings.network_config.SECONDS_PER_BLOCK  # 12 hrs
@@ -67,10 +63,6 @@ class ContractWrapper:
 
 class ValidatorsRegistryContract(ContractWrapper):
     abi_path = 'abi/IValidatorsRegistry.json'
-
-    async def get_registry_root(self) -> Bytes32:
-        """Fetches the latest validators registry root."""
-        return await self.contract.functions.get_deposit_root().call()
 
 
 class KeeperContract(ContractWrapper):

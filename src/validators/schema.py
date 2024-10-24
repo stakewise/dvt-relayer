@@ -8,7 +8,7 @@ from pydantic import BaseModel, field_validator
 from src.validators.fields import BLSPubkeyField, BLSSignatureField
 
 if TYPE_CHECKING:
-    from src.validators.typings import (
+    from src.validators.typings import (  # noqa
         OraclesExitSignatureShares as OraclesSharesDataclass,
     )
     from src.validators.typings import Validator
