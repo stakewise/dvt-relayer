@@ -72,7 +72,9 @@ def bls_signature_and_public_key_to_shares(
     The function splits `signature` and `public_key` to shares so that
     each signature share can be verified with corresponding public key share.
     """
-    message_g2 = hash_to_G2(message, G2ProofOfPossession.DST, G2ProofOfPossession.xmd_hash_function)
+    message_g2 = hash_to_G2(
+        message, G2ProofOfPossession.DST, G2ProofOfPossession.xmd_hash_function  # type: ignore
+    )
 
     coefficients_int = [secrets.randbelow(curve_order) for _ in range(threshold - 1)]
     coefficients_G1 = [multiply(P1, coef) for coef in coefficients_int]
