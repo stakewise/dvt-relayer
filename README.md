@@ -13,9 +13,9 @@ Distributed validator (DV) keystores are used:
 * on DVT sidecars
 * for Relayer testing
 
-The easiest way to generate DV keys for testing is [Obol launchpad](https://holesky.launchpad.obol.org/).
-Works for Holesky, Mainnet and Gnosis.
-Select "Create a distributed validator alone". Follow instructions. Use vault address as withdrawal address.
+The easiest way to generate DV keys for testing is [Obol launchpad](https://hoodi.launchpad.obol.org/).
+Works for Hoodi, Mainnet and Gnosis. Select appropriate network.
+Then select "Create a distributed validator alone". Follow instructions. Use vault address as withdrawal address.
 
 In production environment:
 
