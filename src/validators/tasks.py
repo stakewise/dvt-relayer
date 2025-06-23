@@ -27,7 +27,7 @@ class NetworkValidatorsTask(BaseTask):
         await wait_execution_catch_up_consensus(chain_state=chain_state)
 
         # process new network validators
-        await self.network_validators_scanner.process_new_events(chain_state.execution_block)
+        await self.network_validators_scanner.process_new_events(chain_state.block_number)
 
 
 async def load_genesis_validators() -> None:
