@@ -7,7 +7,7 @@ from sw_utils.networks import BaseNetworkConfig
 
 @dataclass
 class NetworkConfig(BaseNetworkConfig):
-    DEFAULT_DVT_RELAYER_ENDPOINT: str
+    pass
 
 
 NETWORKS: dict[str, NetworkConfig] = {

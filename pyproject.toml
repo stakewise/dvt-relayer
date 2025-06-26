@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dvt-relayer"
-version = "v0.3.0"
+version = "v0.3.1"
 description = "StakeWise operator relayer service for DVT validator setup"
 authors = ["StakeWise Labs <info@stakewise.io>"]
 package-mode = false
