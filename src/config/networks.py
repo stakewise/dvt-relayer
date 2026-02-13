@@ -1,6 +1,6 @@
 from dataclasses import asdict, dataclass
 
-from sw_utils.networks import CHIADO, GNOSIS, HOODI, MAINNET
+from sw_utils.networks import GNOSIS, HOODI, MAINNET
 from sw_utils.networks import NETWORKS as BASE_NETWORKS
 from sw_utils.networks import BaseNetworkConfig
 
@@ -19,8 +19,5 @@ NETWORKS: dict[str, NetworkConfig] = {
     ),
     GNOSIS: NetworkConfig(
         **asdict(BASE_NETWORKS[GNOSIS]),
-    ),
-    CHIADO: NetworkConfig(
-        **asdict(BASE_NETWORKS[CHIADO]),
     ),
 }
