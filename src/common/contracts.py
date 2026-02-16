@@ -51,8 +51,8 @@ class ContractWrapper:
 
         while to_block >= from_block:
             events = await event.get_logs(
-                fromBlock=BlockNumber(max(to_block - blocks_range, from_block)),
-                toBlock=to_block,
+                from_block=BlockNumber(max(to_block - blocks_range, from_block)),
+                to_block=to_block,
                 argument_filters=argument_filters,
             )
             if events:

@@ -23,17 +23,15 @@ class NetworkValidatorsProcessor(EventProcessor):
     def contract(self):  # type: ignore
         return validators_registry_contract
 
-    @staticmethod
-    async def get_from_block() -> BlockNumber:
+    async def get_from_block(self) -> BlockNumber:
         last_validator = NetworkValidatorCrud().get_last_network_validator()
         if not last_validator:
             raise RuntimeError('network validators are missing')
 
         return BlockNumber(last_validator.block_number + 1)
 
-    @staticmethod
     # pylint: disable-next=unused-argument
-    async def process_events(events: list[EventData], to_block: BlockNumber) -> None:
+    async def process_events(self, events: list[EventData], to_block: BlockNumber) -> None:
         validators = process_network_validator_events(events)
         NetworkValidatorCrud().save_network_validators(validators)
 
@@ -83,7 +81,7 @@ async def get_latest_network_validator_public_keys() -> Set[HexStr]:
         raise RuntimeError('network validators are missing')
 
     event_cls = cast(type[AsyncContractEvent], validators_registry_contract.events.DepositEvent)
-    new_events = await event_cls.get_logs(fromBlock=from_block)
+    new_events = await event_cls.get_logs(from_block=from_block)
     new_public_keys: Set[HexStr] = set()
     for event in new_events:
         public_key = process_network_validator_event(event)
