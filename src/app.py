@@ -14,15 +14,12 @@ from src.common.endpoints import router as common_router
 from src.common.setup_logging import setup_logging, setup_sentry
 from src.common.utils import get_project_version
 from src.config import settings
+from src.network_validators.database import NetworkValidatorCrud
+from src.network_validators.tasks import NetworkValidatorsTask, load_genesis_validators
 from src.protocol_config.tasks import ProtocolConfigTask, update_protocol_config
 from src.relayer.validators_manager import load_validators_manager_account
-from src.validators.database import NetworkValidatorCrud
 from src.validators.endpoints import router as validators_router
-from src.validators.tasks import (
-    CleanupValidatorsTask,
-    NetworkValidatorsTask,
-    load_genesis_validators,
-)
+from src.validators.tasks import CleanupValidatorsTask
 
 setup_logging()
 logger = logging.getLogger(__name__)

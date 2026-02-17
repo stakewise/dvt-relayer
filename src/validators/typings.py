@@ -1,12 +1,6 @@
 from dataclasses import dataclass, field
 
-from eth_typing import BlockNumber, BLSSignature, HexStr
-
-
-@dataclass
-class NetworkValidator:
-    public_key: HexStr
-    block_number: BlockNumber
+from eth_typing import BLSSignature, HexStr
 
 
 @dataclass

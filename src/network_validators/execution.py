@@ -10,8 +10,8 @@ from web3.types import EventData
 
 from src.common.contracts import validators_registry_contract
 from src.config import settings
-from src.validators.database import NetworkValidatorCrud
-from src.validators.typings import NetworkValidator
+from src.network_validators.database import NetworkValidatorCrud
+from src.network_validators.typings import NetworkValidator
 
 logger = logging.getLogger(__name__)
 

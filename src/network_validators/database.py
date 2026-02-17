@@ -4,7 +4,7 @@ from eth_typing import HexStr
 
 from src.common.clients import db_client
 from src.config import settings
-from src.validators.typings import NetworkValidator
+from src.network_validators.typings import NetworkValidator
 
 logger = logging.getLogger(__name__)
 

@@ -6,7 +6,7 @@ from web3 import Web3
 
 from src.app_state import AppState
 from src.config import settings
-from src.validators.execution import get_validators_start_index
+from src.network_validators.execution import get_validators_start_index
 from src.validators.exit_signature import (
     get_oracles_exit_signature_shares,
     validate_exit_signature,
