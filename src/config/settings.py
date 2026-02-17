@@ -52,3 +52,6 @@ sentry_dsn: str = config('SENTRY_DSN', default='')
 sentry_environment = config('SENTRY_ENVIRONMENT', default='')
 
 VALIDATOR_LIFETIME: int = config('VALIDATOR_LIFETIME', default=3600, cast=int)
+
+validators_manager_key_file: str = config('VALIDATORS_MANAGER_KEY_FILE')
+validators_manager_password_file: str = config('VALIDATORS_MANAGER_PASSWORD_FILE')

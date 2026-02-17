@@ -169,3 +169,7 @@ cython_debug/
 
 # Sqlite db
 *.db
+
+# Claude
+.claude
+CLAUDE.md
