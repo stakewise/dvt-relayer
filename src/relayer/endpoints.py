@@ -2,13 +2,12 @@ from time import time
 
 from eth_typing import HexStr
 from fastapi import APIRouter
-from sw_utils import DepositData, get_v2_withdrawal_credentials
 from web3 import Web3
 
 from src.app_state import AppState
 from src.common.contracts import VaultContract, validators_registry_contract
 from src.relayer import schema
-from src.relayer.typings import Validator
+from src.relayer.typings import Validator, ValidatorType
 from src.relayer.validators_manager import (
     get_validators_manager_signature_consolidation,
     get_validators_manager_signature_funding,
@@ -25,6 +24,7 @@ async def register_validators(
 ) -> schema.ValidatorsRegisterResponse:
     app_state = AppState()
     validators: list[Validator] = []
+    deposit_signatures_ready = True
     exit_signatures_ready = True
     now = int(time())
 
@@ -35,12 +35,16 @@ async def register_validators(
         if validator is None or validator.validator_index != validator_index:
             validator = Validator(
                 public_key=public_key,
+                vault=request.vault,
                 validator_index=validator_index,
                 created_at=now,
                 amount=amount,
                 validator_type=request.validator_type,
             )
             app_state.validators[public_key] = validator
+
+        if validator.deposit_signature is None:
+            deposit_signatures_ready = False
 
         if validator.exit_signature is None:
             exit_signatures_ready = False
@@ -55,7 +59,7 @@ async def register_validators(
             schema.ValidatorsRegisterResponseItem(
                 public_key=validator.public_key,
                 amount=validator.amount,
-                deposit_signature=validator.deposit_signature or None,
+                deposit_signature=validator.deposit_signature,
                 exit_signature=(
                     Web3.to_hex(validator.exit_signature)
                     if validator.exit_signature is not None
@@ -71,7 +75,7 @@ async def register_validators(
 
     validators_manager_signature: HexStr | None = None
 
-    if exit_signatures_ready:
+    if deposit_signatures_ready and exit_signatures_ready:
         validators_registry_root = await validators_registry_contract.get_registry_root()
         validators_manager_signature = get_validators_manager_signature_register(
             Web3.to_checksum_address(request.vault),
@@ -94,17 +98,14 @@ async def fund_validators(
     # use empty signature for funding
     empty_signature = bytes(96)
     for public_key, amount in zip(request.public_keys, request.amounts):
-        deposit_data = DepositData(
-            pubkey=Web3.to_bytes(hexstr=public_key),
-            withdrawal_credentials=get_v2_withdrawal_credentials(request.vault),
-            amount=amount,
-            signature=empty_signature,
-        )
         validator = Validator(
             public_key=public_key,
+            vault=Web3.to_checksum_address(request.vault),
             amount=amount,
+            validator_type=ValidatorType.V2,
+            validator_index=0,
+            created_at=0,
             deposit_signature=Web3.to_hex(empty_signature),
-            deposit_data_root=Web3.to_hex(deposit_data.hash_tree_root),
         )
         validators.append(validator)
 

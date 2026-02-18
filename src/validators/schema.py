@@ -11,14 +11,18 @@ if TYPE_CHECKING:
     from src.relayer.typings import Validator
 
 
-class ExitSignatureShareRequestItem(BaseModel):
+# Signature shares request submitted by DVT Sidecars
+
+
+class SignatureShareRequestItem(BaseModel):
     public_key: BLSPubkeyField
     exit_signature: BLSSignatureField
+    deposit_signature: BLSSignatureField
 
 
-class ExitSignatureShareRequest(BaseModel):
+class SignatureShareRequest(BaseModel):
     share_index: Annotated[int, Ge(0)]
-    shares: list[ExitSignatureShareRequestItem]
+    shares: list[SignatureShareRequestItem]
 
     @field_validator('shares')
     @classmethod
@@ -28,12 +32,20 @@ class ExitSignatureShareRequest(BaseModel):
         return v
 
 
-class ExitSignatureShareResponse(BaseModel):
+# End of signature shares request
+
+
+class SignatureShareResponse(BaseModel):
     ...
 
 
-class ExitsResponseItem(BaseModel):
+# Validators data consumed by the DVT Sidecars to sign deposit messages and exit messages
+
+
+class ValidatorsResponseItem(BaseModel):
+    vault: HexStr
     public_key: HexStr
+    amount: int
     validator_index: int
     is_exit_signature_ready: bool
     created_at_timestamp: int
@@ -41,9 +53,11 @@ class ExitsResponseItem(BaseModel):
     share_indexes_ready: list[int]
 
     @staticmethod
-    def from_validator(v: 'Validator') -> 'ExitsResponseItem':
-        return ExitsResponseItem(
+    def from_validator(v: 'Validator') -> 'ValidatorsResponseItem':
+        return ValidatorsResponseItem(
+            vault=v.vault,
             public_key=v.public_key,
+            amount=v.amount,
             validator_index=v.validator_index,
             is_exit_signature_ready=bool(v.exit_signature),
             created_at_timestamp=v.created_at,
@@ -54,5 +68,8 @@ class ExitsResponseItem(BaseModel):
         )
 
 
-class ExitsResponse(BaseModel):
-    exits: list[ExitsResponseItem]
+class ValidatorsResponse(BaseModel):
+    validators: list[ValidatorsResponseItem]
+
+
+# End of validators data
