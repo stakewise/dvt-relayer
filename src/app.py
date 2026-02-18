@@ -15,6 +15,7 @@ from src.common.setup_logging import setup_logging, setup_sentry
 from src.common.utils import get_project_version
 from src.config import settings
 from src.protocol_config.tasks import ProtocolConfigTask, update_protocol_config
+from src.relayer.endpoints import router as relayer_router
 from src.relayer.validators_manager import load_validators_manager_account
 from src.validators.endpoints import router as validators_router
 from src.validators.tasks import CleanupValidatorsTask
@@ -75,6 +76,7 @@ async def log_request_processing_time(request: Request, call_next: Callable) -> 
         logger.info('Request processing time for path %s is %.1f', request.url.path, elapsed)
 
 
+app.include_router(relayer_router)
 app.include_router(validators_router)
 app.include_router(common_router)
 
