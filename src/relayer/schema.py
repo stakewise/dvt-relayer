@@ -3,25 +3,45 @@ from pydantic import BaseModel
 from web3.types import Gwei
 
 from src.relayer.typings import ValidatorType
+from src.validators.fields import BLSPubkeyField
+from src.validators.typings import (
+    OraclesExitSignatureShares as OraclesExitSignatureSharesDataclass,
+)
 
 
 class ValidatorsRegisterRequest(BaseModel):
     vault: ChecksumAddress
+    public_keys: list[BLSPubkeyField]
     validators_start_index: int
     amounts: list[Gwei]
     validator_type: ValidatorType
 
 
+class OraclesExitSignatureShares(BaseModel):
+    public_keys: list[HexStr]
+    encrypted_exit_signatures: list[HexStr]
+
+    @staticmethod
+    def from_dataclass(
+        d: OraclesExitSignatureSharesDataclass,
+    ) -> 'OraclesExitSignatureShares':
+        return OraclesExitSignatureShares(
+            public_keys=d.public_keys,
+            encrypted_exit_signatures=d.encrypted_exit_signatures,
+        )
+
+
 class ValidatorsRegisterResponseItem(BaseModel):
     public_key: HexStr
-    deposit_signature: HexStr
     amount: Gwei
-    exit_signature: HexStr
+    deposit_signature: HexStr | None = None
+    exit_signature: HexStr | None = None
+    oracles_exit_signature_shares: OraclesExitSignatureShares | None = None
 
 
 class ValidatorsRegisterResponse(BaseModel):
     validators: list[ValidatorsRegisterResponseItem]
-    validators_manager_signature: HexStr
+    validators_manager_signature: HexStr | None = None
 
 
 class ValidatorsFundRequest(BaseModel):

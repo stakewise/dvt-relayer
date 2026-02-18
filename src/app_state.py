@@ -3,7 +3,7 @@ from eth_typing import HexStr
 from sw_utils import ProtocolConfig
 
 from src.common.typings import OraclesCache, Singleton
-from src.validators.typings import Validator
+from src.relayer.typings import Validator
 
 
 class AppState(metaclass=Singleton):
