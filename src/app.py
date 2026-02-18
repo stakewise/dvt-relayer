@@ -14,8 +14,6 @@ from src.common.endpoints import router as common_router
 from src.common.setup_logging import setup_logging, setup_sentry
 from src.common.utils import get_project_version
 from src.config import settings
-from src.network_validators.database import NetworkValidatorCrud
-from src.network_validators.tasks import NetworkValidatorsTask, load_genesis_validators
 from src.protocol_config.tasks import ProtocolConfigTask, update_protocol_config
 from src.relayer.validators_manager import load_validators_manager_account
 from src.validators.endpoints import router as validators_router
@@ -41,22 +39,17 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator:
 
     app_state.validators = {}
 
-    NetworkValidatorCrud().setup()
-    await load_genesis_validators()
-
     logger.info('Fetching protocol config...')
     await update_protocol_config()
     logger.info('Protocol config is ready')
 
     # Note: we create a strong references to the tasks. Helps to avoid garbage collecting.
     protocol_config_task = asyncio.create_task(ProtocolConfigTask().run())
-    network_validators_task = asyncio.create_task(NetworkValidatorsTask().run())
     cleanup_validators_task = asyncio.create_task(CleanupValidatorsTask().run())
 
     yield
 
     protocol_config_task.cancel()
-    network_validators_task.cancel()
     cleanup_validators_task.cancel()
 
 

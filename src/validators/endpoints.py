@@ -6,7 +6,6 @@ from web3 import Web3
 
 from src.app_state import AppState
 from src.config import settings
-from src.network_validators.execution import get_validators_start_index
 from src.validators.exit_signature import (
     get_oracles_exit_signature_shares,
     validate_exit_signature,
@@ -33,7 +32,7 @@ async def create_validators(
     app_state = AppState()
     validator_items = []
 
-    validator_index = await get_validators_start_index()
+    validator_index = 0
     exit_signatures_ready = True
     now = int(time())
 
