@@ -3,6 +3,7 @@ import os
 from functools import cached_property
 
 from eth_typing import BlockNumber
+from sw_utils.typings import Bytes32
 from web3.contract import AsyncContract
 from web3.contract.async_contract import (
     AsyncContractEvent,
@@ -64,6 +65,10 @@ class ContractWrapper:
 class ValidatorsRegistryContract(ContractWrapper):
     abi_path = 'abi/IValidatorsRegistry.json'
 
+    async def get_registry_root(self) -> Bytes32:
+        """Fetches the latest validators registry root."""
+        return await self.contract.functions.get_deposit_root().call()
+
 
 class KeeperContract(ContractWrapper):
     abi_path = 'abi/IKeeper.json'
@@ -77,6 +82,13 @@ class KeeperContract(ContractWrapper):
             from_block=from_block or settings.network_config.KEEPER_GENESIS_BLOCK,
             to_block=to_block or await execution_client.eth.get_block_number(),
         )
+
+
+class VaultContract(ContractWrapper):
+    abi_path = 'abi/IEthVault.json'
+
+    async def validators_manager_nonce(self) -> int:
+        return await self.contract.functions.validatorsManagerNonce().call()
 
 
 validators_registry_contract = ValidatorsRegistryContract(

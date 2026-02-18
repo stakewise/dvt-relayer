@@ -15,6 +15,7 @@ from src.common.setup_logging import setup_logging, setup_sentry
 from src.common.utils import get_project_version
 from src.config import settings
 from src.protocol_config.tasks import ProtocolConfigTask, update_protocol_config
+from src.relayer.validators_manager import load_validators_manager_account
 from src.validators.database import NetworkValidatorCrud
 from src.validators.endpoints import router as validators_router
 from src.validators.tasks import (
@@ -35,6 +36,11 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator:
     logger.info('Starting DVT Relayer service %s', version)
 
     app_state = AppState()
+
+    # load validators manager account
+    validators_manager = load_validators_manager_account()
+    app_state.validators_manager_account = validators_manager
+    logger.info('validators manager address: %s', validators_manager.address)
 
     app_state.validators = {}
 
