@@ -6,6 +6,7 @@ from web3 import Web3
 
 from src.app_state import AppState
 from src.config import settings
+from src.relayer.typings import Validator
 from src.validators.exit_signature import (
     get_oracles_exit_signature_shares,
     validate_exit_signature,
@@ -20,7 +21,6 @@ from src.validators.schema import (
     ExitsResponseItem,
     ValidatorsRequest,
 )
-from src.validators.typings import Validator
 
 router = APIRouter()
 
