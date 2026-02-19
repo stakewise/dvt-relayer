@@ -20,8 +20,8 @@ from src.validators.schema import (
 router = APIRouter()
 
 
-@router.get('/exits')
-async def get_exits() -> ValidatorsResponse:
+@router.get('/validators')
+async def get_validators() -> ValidatorsResponse:
     app_state = AppState()
     response = ValidatorsResponse(validators=[])
 
@@ -30,8 +30,8 @@ async def get_exits() -> ValidatorsResponse:
     return response
 
 
-@router.post('/exit-signature')
-async def create_exit_signature_shares(
+@router.post('/signatures')
+async def submit_signature_shares(
     request: SignatureShareRequest,
 ) -> SignatureShareResponse:
     app_state = AppState()

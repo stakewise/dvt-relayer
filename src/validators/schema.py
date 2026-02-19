@@ -49,6 +49,7 @@ class ValidatorsResponseItem(BaseModel):
     validator_index: int
     validator_type: str
     is_exit_signature_ready: bool
+    is_deposit_signature_ready: bool
     created_at_timestamp: int
     created_at_string: str
     share_indexes_ready: list[int]
@@ -62,6 +63,7 @@ class ValidatorsResponseItem(BaseModel):
             validator_index=v.validator_index,
             validator_type=v.validator_type.value,
             is_exit_signature_ready=bool(v.exit_signature),
+            is_deposit_signature_ready=bool(v.deposit_signature),
             created_at_timestamp=v.created_at,
             created_at_string=datetime.fromtimestamp(v.created_at, timezone.utc).strftime(
                 '%Y-%m-%d %H:%M:%S%z'
