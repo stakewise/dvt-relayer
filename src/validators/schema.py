@@ -47,6 +47,7 @@ class ValidatorsResponseItem(BaseModel):
     public_key: HexStr
     amount: int
     validator_index: int
+    validator_type: str
     is_exit_signature_ready: bool
     created_at_timestamp: int
     created_at_string: str
@@ -59,6 +60,7 @@ class ValidatorsResponseItem(BaseModel):
             public_key=v.public_key,
             amount=v.amount,
             validator_index=v.validator_index,
+            validator_type=v.validator_type.value,
             is_exit_signature_ready=bool(v.exit_signature),
             created_at_timestamp=v.created_at,
             created_at_string=datetime.fromtimestamp(v.created_at, timezone.utc).strftime(
