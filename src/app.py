@@ -16,6 +16,7 @@ from src.common.utils import get_project_version
 from src.config import settings
 from src.protocol_config.tasks import ProtocolConfigTask, update_protocol_config
 from src.relayer.endpoints import router as relayer_router
+from src.relayer.public_keys import load_public_keys
 from src.relayer.validators_manager import load_validators_manager_account
 from src.validators.endpoints import router as validators_router
 from src.validators.tasks import CleanupValidatorsTask
@@ -37,6 +38,11 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator:
     validators_manager = load_validators_manager_account()
     app_state.validators_manager_account = validators_manager
     logger.info('validators manager address: %s', validators_manager.address)
+
+    # load public keys
+    public_keys = load_public_keys()
+    app_state.public_keys = public_keys
+    logger.info('loaded %d public keys', len(public_keys))
 
     app_state.validators = {}
 

@@ -3,7 +3,6 @@ from pydantic import BaseModel
 from web3.types import Gwei
 
 from src.relayer.typings import ValidatorType
-from src.validators.fields import BLSPubkeyField
 from src.validators.typings import (
     OraclesExitSignatureShares as OraclesExitSignatureSharesDataclass,
 )
@@ -11,7 +10,6 @@ from src.validators.typings import (
 
 class ValidatorsRegisterRequest(BaseModel):
     vault: ChecksumAddress
-    public_keys: list[BLSPubkeyField]
     validators_start_index: int
     amounts: list[Gwei]
     validator_type: ValidatorType
