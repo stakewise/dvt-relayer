@@ -28,7 +28,7 @@ async def register_validators(
     exit_signatures_ready = True
     now = int(time())
 
-    for i, (public_key, amount) in enumerate(zip(request.public_keys, request.amounts)):
+    for i, (public_key, amount) in enumerate(zip(app_state.public_keys, request.amounts)):
         validator_index = request.validators_start_index + i
         validator = app_state.validators.get(public_key)
 

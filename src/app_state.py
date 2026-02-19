@@ -9,5 +9,6 @@ from src.relayer.typings import Validator
 class AppState(metaclass=Singleton):
     oracles_cache: OraclesCache | None = None
     protocol_config: ProtocolConfig
+    public_keys: list[HexStr]
     validators: dict[HexStr, Validator]
     validators_manager_account: LocalAccount
