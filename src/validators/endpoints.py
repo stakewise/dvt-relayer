@@ -1,4 +1,4 @@
-from eth_typing import BLSSignature, HexStr
+from eth_typing import BLSSignature
 from fastapi import APIRouter
 from web3 import Web3
 
@@ -6,33 +6,34 @@ from src.app_state import AppState
 from src.config import settings
 from src.validators.exit_signature import (
     get_oracles_exit_signature_shares,
+    validate_deposit_signature,
     validate_exit_signature,
 )
 from src.validators.key_shares import reconstruct_shared_bls_signature
 from src.validators.schema import (
-    ExitSignatureShareRequest,
-    ExitSignatureShareResponse,
-    ExitsResponse,
-    ExitsResponseItem,
+    SignatureShareRequest,
+    SignatureShareResponse,
+    ValidatorsResponse,
+    ValidatorsResponseItem,
 )
 
 router = APIRouter()
 
 
-@router.get('/exits')
-async def get_exits() -> ExitsResponse:
+@router.get('/validators')
+async def get_validators() -> ValidatorsResponse:
     app_state = AppState()
-    response = ExitsResponse(exits=[])
+    response = ValidatorsResponse(validators=[])
 
     for validator in app_state.validators.values():
-        response.exits.append(ExitsResponseItem.from_validator(validator))
+        response.validators.append(ValidatorsResponseItem.from_validator(validator))
     return response
 
 
-@router.post('/exit-signature')
-async def create_exit_signature_shares(
-    request: ExitSignatureShareRequest,
-) -> ExitSignatureShareResponse:
+@router.post('/signatures')
+async def submit_signature_shares(
+    request: SignatureShareRequest,
+) -> SignatureShareResponse:
     app_state = AppState()
 
     for share in request.shares:
@@ -40,30 +41,49 @@ async def create_exit_signature_shares(
         if validator is None:
             continue
 
-        current_share = validator.exit_signature_shares.get(request.share_index)
-        if current_share:
-            continue
+        # Handle exit signature shares
+        if not validator.exit_signature_shares.get(request.share_index):
+            validator.exit_signature_shares[request.share_index] = BLSSignature(
+                Web3.to_bytes(hexstr=share.exit_signature)
+            )
 
-        validator.exit_signature_shares[request.share_index] = BLSSignature(
-            Web3.to_bytes(hexstr=HexStr(share.exit_signature))
-        )
+            if len(validator.exit_signature_shares) >= settings.signature_threshold:
+                # Reconstruct and validate exit signature
+                exit_signature = reconstruct_shared_bls_signature(validator.exit_signature_shares)
+                if not validate_exit_signature(
+                    validator.public_key, validator.validator_index, exit_signature
+                ):
+                    raise RuntimeError('invalid exit signature')
 
-        if len(validator.exit_signature_shares) < settings.signature_threshold:
-            continue
+                validator.exit_signature = exit_signature
 
-        exit_signature = reconstruct_shared_bls_signature(validator.exit_signature_shares)
-        if not validate_exit_signature(
-            validator.public_key, validator.validator_index, exit_signature
-        ):
-            raise RuntimeError('invalid exit signature')
+                # Split exit signature into shares for oracles
+                oracles_shares = await get_oracles_exit_signature_shares(
+                    public_key=validator.public_key,
+                    validator_index=validator.validator_index,
+                    exit_signature=validator.exit_signature,
+                )
+                validator.oracles_exit_signature_shares = oracles_shares
 
-        validator.exit_signature = exit_signature
+        # Handle deposit signature shares
+        if not validator.deposit_signature_shares.get(request.share_index):
+            validator.deposit_signature_shares[request.share_index] = BLSSignature(
+                Web3.to_bytes(hexstr=share.deposit_signature)
+            )
 
-        oracles_shares = await get_oracles_exit_signature_shares(
-            public_key=validator.public_key,
-            validator_index=validator.validator_index,
-            exit_signature=validator.exit_signature,
-        )
-        validator.oracles_exit_signature_shares = oracles_shares
+            if len(validator.deposit_signature_shares) >= settings.signature_threshold:
+                # Reconstruct and validate deposit signature
+                deposit_signature = reconstruct_shared_bls_signature(
+                    validator.deposit_signature_shares
+                )
+                if not validate_deposit_signature(
+                    validator.public_key,
+                    Web3.to_bytes(hexstr=validator.withdrawal_credentials),
+                    validator.amount,
+                    deposit_signature,
+                ):
+                    raise RuntimeError('invalid deposit signature')
 
-    return ExitSignatureShareResponse()
+                validator.deposit_signature = deposit_signature
+
+    return SignatureShareResponse()
