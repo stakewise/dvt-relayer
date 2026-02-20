@@ -7,6 +7,7 @@ from web3 import Web3
 from src.app_state import AppState
 from src.common.contracts import VaultContract, validators_registry_contract
 from src.relayer import schema
+from src.relayer.public_keys import public_keys_manager
 from src.relayer.typings import Validator, ValidatorType
 from src.relayer.validators_manager import (
     get_validators_manager_signature_consolidation,
@@ -30,7 +31,10 @@ async def register_validators(
 
     now = int(time())
 
-    for i, (public_key, amount) in enumerate(zip(app_state.public_keys, request.amounts)):
+    # Build validators list and check if signatures are ready for all validators
+    for i, (public_key, amount) in enumerate(
+        zip(await public_keys_manager.get_unregistered(), request.amounts)
+    ):
         validator_index = request.validators_start_index + i
         validator = app_state.validators.get(public_key)
 
@@ -50,6 +54,7 @@ async def register_validators(
 
         validators.append(validator)
 
+    # Build response
     validator_items: list[schema.ValidatorsRegisterResponseItem] = []
 
     for validator in validators:
@@ -76,6 +81,7 @@ async def register_validators(
             )
         )
 
+    # Compute validators manager signature
     validators_manager_signature: HexStr | None = None
 
     if is_signatures_ready_for_all_validators:
