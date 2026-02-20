@@ -24,8 +24,10 @@ async def register_validators(
 ) -> schema.ValidatorsRegisterResponse:
     app_state = AppState()
     validators: list[Validator] = []
-    deposit_signatures_ready = True
-    exit_signatures_ready = True
+
+    # Flag is True when all validators have deposit and exit signatures, False otherwise.
+    is_signatures_ready_for_all_validators = True
+
     now = int(time())
 
     for i, (public_key, amount) in enumerate(zip(app_state.public_keys, request.amounts)):
@@ -43,11 +45,8 @@ async def register_validators(
             )
             app_state.validators[public_key] = validator
 
-        if validator.deposit_signature is None:
-            deposit_signatures_ready = False
-
-        if validator.exit_signature is None:
-            exit_signatures_ready = False
+        if validator.deposit_signature is None or validator.exit_signature is None:
+            is_signatures_ready_for_all_validators = False
 
         validators.append(validator)
 
@@ -79,7 +78,7 @@ async def register_validators(
 
     validators_manager_signature: HexStr | None = None
 
-    if deposit_signatures_ready and exit_signatures_ready:
+    if is_signatures_ready_for_all_validators:
         validators_registry_root = await validators_registry_contract.get_registry_root()
         validators_manager_signature = get_validators_manager_signature_register(
             Web3.to_checksum_address(request.vault),

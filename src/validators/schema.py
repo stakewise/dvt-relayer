@@ -43,15 +43,23 @@ class SignatureShareResponse(BaseModel):
 
 
 class ValidatorsResponseItem(BaseModel):
+    # Fields used for building deposit and exit messages
     vault: HexStr
     public_key: HexStr
     amount: int
     validator_index: int
     validator_type: str
-    is_exit_signature_ready: bool
-    is_deposit_signature_ready: bool
+
+    # The `is_signatures_ready` flag indicates whether both deposit and exit signatures
+    # are ready for the validator without exposing the signatures themselves.
+    is_signatures_ready: bool
+
+    # Timestamps for observability
     created_at_timestamp: int
     created_at_string: str
+
+    # List of share indexes for which both deposit and exit signature shares have been submitted.
+    # This can be used by the Sidecars to determine which shares are still missing.
     share_indexes_ready: list[int]
 
     @staticmethod
@@ -62,13 +70,14 @@ class ValidatorsResponseItem(BaseModel):
             amount=v.amount,
             validator_index=v.validator_index,
             validator_type=v.validator_type.value,
-            is_exit_signature_ready=bool(v.exit_signature),
-            is_deposit_signature_ready=bool(v.deposit_signature),
+            is_signatures_ready=bool(v.exit_signature) and bool(v.deposit_signature),
             created_at_timestamp=v.created_at,
             created_at_string=datetime.fromtimestamp(v.created_at, timezone.utc).strftime(
                 '%Y-%m-%d %H:%M:%S%z'
             ),
-            share_indexes_ready=sorted(list(v.exit_signature_shares.keys())),
+            share_indexes_ready=sorted(
+                v.exit_signature_shares.keys() & v.deposit_signature_shares.keys()
+            ),
         )
 
 
