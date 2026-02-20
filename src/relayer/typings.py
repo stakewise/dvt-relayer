@@ -39,8 +39,8 @@ class Validator:  # pylint: disable=too-many-instance-attributes
     oracles_exit_signature_shares: OraclesExitSignatureShares | None = None
 
     # Deposit signature
-    deposit_signature: HexStr | None = None
-    deposit_signature_shares: dict[int, HexStr] = field(default_factory=dict)
+    deposit_signature: BLSSignature | None = None
+    deposit_signature_shares: dict[int, BLSSignature] = field(default_factory=dict)
 
     @property
     def deposit_data(self) -> DepositData:
@@ -51,7 +51,7 @@ class Validator:  # pylint: disable=too-many-instance-attributes
             pubkey=Web3.to_bytes(hexstr=self.public_key),
             withdrawal_credentials=Web3.to_bytes(hexstr=self.withdrawal_credentials),
             amount=self.amount,
-            signature=Web3.to_bytes(hexstr=self.deposit_signature),
+            signature=self.deposit_signature,
         )
 
     @property

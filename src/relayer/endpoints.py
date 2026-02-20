@@ -1,6 +1,6 @@
 from time import time
 
-from eth_typing import HexStr
+from eth_typing import BLSSignature, HexStr
 from fastapi import APIRouter
 from web3 import Web3
 
@@ -59,7 +59,11 @@ async def register_validators(
             schema.ValidatorsRegisterResponseItem(
                 public_key=validator.public_key,
                 amount=validator.amount,
-                deposit_signature=validator.deposit_signature,
+                deposit_signature=(
+                    Web3.to_hex(validator.deposit_signature)
+                    if validator.deposit_signature is not None
+                    else None
+                ),
                 exit_signature=(
                     Web3.to_hex(validator.exit_signature)
                     if validator.exit_signature is not None
@@ -105,7 +109,7 @@ async def fund_validators(
             validator_type=ValidatorType.V2,
             validator_index=0,
             created_at=0,
-            deposit_signature=Web3.to_hex(empty_signature),
+            deposit_signature=BLSSignature(empty_signature),
         )
         validators.append(validator)
 

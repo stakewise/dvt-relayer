@@ -1,4 +1,4 @@
-from eth_typing import BLSSignature, HexStr
+from eth_typing import BLSSignature
 from fastapi import APIRouter
 from web3 import Web3
 
@@ -44,7 +44,7 @@ async def submit_signature_shares(
         # Handle exit signature shares
         if not validator.exit_signature_shares.get(request.share_index):
             validator.exit_signature_shares[request.share_index] = BLSSignature(
-                Web3.to_bytes(hexstr=HexStr(share.exit_signature))
+                Web3.to_bytes(hexstr=share.exit_signature)
             )
 
             if len(validator.exit_signature_shares) >= settings.signature_threshold:
@@ -67,17 +67,15 @@ async def submit_signature_shares(
 
         # Handle deposit signature shares
         if not validator.deposit_signature_shares.get(request.share_index):
-            validator.deposit_signature_shares[request.share_index] = HexStr(
-                share.deposit_signature
+            validator.deposit_signature_shares[request.share_index] = BLSSignature(
+                Web3.to_bytes(hexstr=share.deposit_signature)
             )
 
             if len(validator.deposit_signature_shares) >= settings.signature_threshold:
                 # Reconstruct and validate deposit signature
-                deposit_sig_shares = {
-                    idx: BLSSignature(Web3.to_bytes(hexstr=sig))
-                    for idx, sig in validator.deposit_signature_shares.items()
-                }
-                deposit_signature = reconstruct_shared_bls_signature(deposit_sig_shares)
+                deposit_signature = reconstruct_shared_bls_signature(
+                    validator.deposit_signature_shares
+                )
                 if not validate_deposit_signature(
                     validator.public_key,
                     Web3.to_bytes(hexstr=validator.withdrawal_credentials),
@@ -86,6 +84,6 @@ async def submit_signature_shares(
                 ):
                     raise RuntimeError('invalid deposit signature')
 
-                validator.deposit_signature = Web3.to_hex(deposit_signature)
+                validator.deposit_signature = deposit_signature
 
     return SignatureShareResponse()

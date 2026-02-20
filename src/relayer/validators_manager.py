@@ -81,9 +81,11 @@ def get_validators_manager_signature_consolidation(
 
 
 def _encode_validator(v: Validator) -> bytes:
-    encoded_validator = [
+    if v.deposit_signature is None:
+        raise ValueError(f'Deposit signature is not set for validator {v.public_key}')
+    encoded_validator: list[bytes] = [
         Web3.to_bytes(hexstr=v.public_key),
-        Web3.to_bytes(hexstr=v.deposit_signature),
+        v.deposit_signature,
         Web3.to_bytes(hexstr=v.deposit_data_root),
     ]
     if v.validator_type == ValidatorType.V2:
