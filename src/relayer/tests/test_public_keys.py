@@ -26,8 +26,6 @@ def _clean_app_state() -> None:  # type: ignore[misc]
 class TestPublicKeysManagerLoad:
     def test_load_valid_csv(self) -> None:
         """Test loading public keys from a valid CSV file."""
-        manager = PublicKeysManager()
-
         with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, newline='') as f:
             f.write(f'{PUBKEY_1}\n')
             f.write(f'{PUBKEY_2}\n')
@@ -36,25 +34,21 @@ class TestPublicKeysManagerLoad:
         try:
             with patch('src.relayer.public_keys.settings') as mock_settings:
                 mock_settings.public_keys_file = csv_path
-                manager.load_from_file()
+                public_keys = PublicKeysManager.load_from_file()
 
-            assert manager.public_keys == [PUBKEY_1, PUBKEY_2]
+            assert public_keys == [PUBKEY_1, PUBKEY_2]
         finally:
             os.unlink(csv_path)
 
     def test_load_missing_file_raises(self) -> None:
         """Test that loading from a missing file raises ValueError."""
-        manager = PublicKeysManager()
-
         with patch('src.relayer.public_keys.settings') as mock_settings:
             mock_settings.public_keys_file = '/nonexistent/path/keys.csv'
             with pytest.raises(ValueError, match="Can't open public keys file"):
-                manager.load_from_file()
+                PublicKeysManager.load_from_file()
 
     def test_load_empty_file_raises(self) -> None:
         """Test that loading from a file with no valid keys raises ValueError."""
-        manager = PublicKeysManager()
-
         with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, newline='') as f:
             f.write('\n\n')
             csv_path = f.name
@@ -63,14 +57,12 @@ class TestPublicKeysManagerLoad:
             with patch('src.relayer.public_keys.settings') as mock_settings:
                 mock_settings.public_keys_file = csv_path
                 with pytest.raises(ValueError, match='No public keys found'):
-                    manager.load_from_file()
+                    PublicKeysManager.load_from_file()
         finally:
             os.unlink(csv_path)
 
     def test_load_skips_empty_rows(self) -> None:
         """Test that empty rows in the CSV are skipped."""
-        manager = PublicKeysManager()
-
         with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, newline='') as f:
             f.write(f'{PUBKEY_1}\n')
             f.write('\n')
@@ -80,16 +72,14 @@ class TestPublicKeysManagerLoad:
         try:
             with patch('src.relayer.public_keys.settings') as mock_settings:
                 mock_settings.public_keys_file = csv_path
-                manager.load_from_file()
+                public_keys = PublicKeysManager.load_from_file()
 
-            assert manager.public_keys == [PUBKEY_1, PUBKEY_2]
+            assert public_keys == [PUBKEY_1, PUBKEY_2]
         finally:
             os.unlink(csv_path)
 
     def test_load_strips_whitespace(self) -> None:
         """Test that whitespace is stripped from public keys."""
-        manager = PublicKeysManager()
-
         with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, newline='') as f:
             f.write(f'  {PUBKEY_1}  \n')
             csv_path = f.name
@@ -97,31 +87,25 @@ class TestPublicKeysManagerLoad:
         try:
             with patch('src.relayer.public_keys.settings') as mock_settings:
                 mock_settings.public_keys_file = csv_path
-                manager.load_from_file()
+                public_keys = PublicKeysManager.load_from_file()
 
-            assert manager.public_keys == [PUBKEY_1]
+            assert public_keys == [PUBKEY_1]
         finally:
             os.unlink(csv_path)
 
 
 class TestPublicKeysManagerFetchRegistered:
     async def test_fetch_registered_empty_public_keys(self) -> None:
-        """Test that fetch_registered is a no-op when no public keys are loaded."""
-        manager = PublicKeysManager()
-        assert manager.public_keys == []
-
-        # Should return early without making any calls
+        """Test that fetch_registered returns empty set when no public keys are given."""
         with patch('src.relayer.public_keys.consensus_client') as mock_client:
-            await manager.fetch_registered()
+            result = await PublicKeysManager.fetch_registered(public_keys=[])
             mock_client.get_validators_by_ids.assert_not_called()
+            mock_client.get_pending_deposits.assert_not_called()
 
-        assert manager.registered_public_keys == set()
+        assert result == set()
 
     async def test_fetch_registered_with_results(self) -> None:
         """Test fetching registered validators from the consensus client."""
-        manager = PublicKeysManager()
-        manager.public_keys = [PUBKEY_1, PUBKEY_2, PUBKEY_3]
-
         # PUBKEY_1 and PUBKEY_3 are registered on the consensus layer
         mock_response = {
             'data': [
@@ -132,37 +116,92 @@ class TestPublicKeysManagerFetchRegistered:
 
         with patch('src.relayer.public_keys.consensus_client') as mock_client:
             mock_client.get_validators_by_ids = AsyncMock(return_value=mock_response)
-            await manager.fetch_registered()
+            mock_client.get_pending_deposits = AsyncMock(return_value=[])
+            result = await PublicKeysManager.fetch_registered(
+                public_keys=[PUBKEY_1, PUBKEY_2, PUBKEY_3]
+            )
 
-        assert manager.registered_public_keys == {PUBKEY_1, PUBKEY_3}
+        assert result == {PUBKEY_1, PUBKEY_3}
 
     async def test_fetch_registered_no_validators_found(self) -> None:
         """Test fetch_registered when no validators are found on the consensus layer."""
-        manager = PublicKeysManager()
-        manager.public_keys = [PUBKEY_1, PUBKEY_2]
-
         mock_response: dict = {'data': []}
 
         with patch('src.relayer.public_keys.consensus_client') as mock_client:
             mock_client.get_validators_by_ids = AsyncMock(return_value=mock_response)
-            await manager.fetch_registered()
+            mock_client.get_pending_deposits = AsyncMock(return_value=[])
+            result = await PublicKeysManager.fetch_registered(public_keys=[PUBKEY_1, PUBKEY_2])
 
-        assert manager.registered_public_keys == set()
+        assert result == set()
 
     async def test_fetch_registered_calls_with_correct_params(self) -> None:
-        """Test that fetch_registered calls consensus_client with correct parameters."""
-        manager = PublicKeysManager()
-        manager.public_keys = [PUBKEY_1, PUBKEY_2]
-
+        """Test that fetch_registered passes state_id to both consensus client calls."""
         mock_response: dict = {'data': []}
+        state_id = 1234567
 
         with patch('src.relayer.public_keys.consensus_client') as mock_client:
             mock_client.get_validators_by_ids = AsyncMock(return_value=mock_response)
-            await manager.fetch_registered()
+            mock_client.get_pending_deposits = AsyncMock(return_value=[])
+            await PublicKeysManager.fetch_registered(
+                public_keys=[PUBKEY_1, PUBKEY_2], state_id=state_id
+            )
             mock_client.get_validators_by_ids.assert_called_once_with(
                 validator_ids=[PUBKEY_1, PUBKEY_2],
-                state_id='head',
+                state_id=str(state_id),
             )
+            mock_client.get_pending_deposits.assert_called_once_with(state_id=state_id)
+
+    async def test_fetch_registered_pending_deposits_adds_keys(self) -> None:
+        """Test that keys found in pending deposits are added to registered keys."""
+        mock_response: dict = {'data': []}
+        pending_deposits = [
+            {'pubkey': PUBKEY_2.replace('0x', '')},
+        ]
+
+        with patch('src.relayer.public_keys.consensus_client') as mock_client:
+            mock_client.get_validators_by_ids = AsyncMock(return_value=mock_response)
+            mock_client.get_pending_deposits = AsyncMock(return_value=pending_deposits)
+            result = await PublicKeysManager.fetch_registered(
+                public_keys=[PUBKEY_1, PUBKEY_2, PUBKEY_3]
+            )
+
+        assert result == {PUBKEY_2}
+
+    async def test_fetch_registered_pending_deposits_combined_with_active(self) -> None:
+        """Test that pending deposit keys are combined with active validator keys."""
+        mock_response = {
+            'data': [
+                {'validator': {'pubkey': PUBKEY_1.replace('0x', '')}},
+            ]
+        }
+        pending_deposits = [
+            {'pubkey': PUBKEY_3.replace('0x', '')},
+        ]
+
+        with patch('src.relayer.public_keys.consensus_client') as mock_client:
+            mock_client.get_validators_by_ids = AsyncMock(return_value=mock_response)
+            mock_client.get_pending_deposits = AsyncMock(return_value=pending_deposits)
+            result = await PublicKeysManager.fetch_registered(
+                public_keys=[PUBKEY_1, PUBKEY_2, PUBKEY_3]
+            )
+
+        assert result == {PUBKEY_1, PUBKEY_3}
+
+    async def test_fetch_registered_pending_deposits_ignores_unknown_keys(self) -> None:
+        """Test that pending deposits for unknown public keys are ignored."""
+        mock_response: dict = {'data': []}
+        # PUBKEY_2 and PUBKEY_3 are not in public_keys
+        pending_deposits = [
+            {'pubkey': PUBKEY_2.replace('0x', '')},
+            {'pubkey': PUBKEY_3.replace('0x', '')},
+        ]
+
+        with patch('src.relayer.public_keys.consensus_client') as mock_client:
+            mock_client.get_validators_by_ids = AsyncMock(return_value=mock_response)
+            mock_client.get_pending_deposits = AsyncMock(return_value=pending_deposits)
+            result = await PublicKeysManager.fetch_registered(public_keys=[PUBKEY_1])
+
+        assert result == set()
 
 
 class TestPublicKeysManagerGetUnregistered:
@@ -172,7 +211,7 @@ class TestPublicKeysManagerGetUnregistered:
         manager.public_keys = [PUBKEY_1, PUBKEY_2, PUBKEY_3]
         manager.registered_public_keys = set()
 
-        AppState().network_validators_block = BlockNumber(100)
+        manager.block_number = BlockNumber(100)
         with (
             patch('src.relayer.public_keys.execution_client') as mock_exec,
             patch('src.relayer.public_keys.validators_registry_contract') as mock_registry,
@@ -189,7 +228,7 @@ class TestPublicKeysManagerGetUnregistered:
         manager.public_keys = [PUBKEY_1, PUBKEY_2, PUBKEY_3]
         manager.registered_public_keys = {PUBKEY_1, PUBKEY_3}
 
-        AppState().network_validators_block = BlockNumber(100)
+        manager.block_number = BlockNumber(100)
         with (
             patch('src.relayer.public_keys.execution_client') as mock_exec,
             patch('src.relayer.public_keys.validators_registry_contract') as mock_registry,
@@ -206,7 +245,7 @@ class TestPublicKeysManagerGetUnregistered:
         manager.public_keys = [PUBKEY_1, PUBKEY_2]
         manager.registered_public_keys = {PUBKEY_1, PUBKEY_2}
 
-        AppState().network_validators_block = BlockNumber(100)
+        manager.block_number = BlockNumber(100)
         with (
             patch('src.relayer.public_keys.execution_client') as mock_exec,
             patch('src.relayer.public_keys.validators_registry_contract') as mock_registry,
@@ -229,7 +268,7 @@ class TestPublicKeysManagerGetUnregistered:
         manager.public_keys = [PUBKEY_3, PUBKEY_1, PUBKEY_2]
         manager.registered_public_keys = {PUBKEY_1}
 
-        AppState().network_validators_block = BlockNumber(100)
+        manager.block_number = BlockNumber(100)
         with (
             patch('src.relayer.public_keys.execution_client') as mock_exec,
             patch('src.relayer.public_keys.validators_registry_contract') as mock_registry,
@@ -249,7 +288,7 @@ class TestPublicKeysManagerGetUnregistered:
         # PUBKEY_2 has a pending deposit event
         pending_event = {'args': {'pubkey': bytes.fromhex(PUBKEY_2[2:])}}
 
-        AppState().network_validators_block = BlockNumber(100)
+        manager.block_number = BlockNumber(100)
         with (
             patch('src.relayer.public_keys.execution_client') as mock_exec,
             patch('src.relayer.public_keys.validators_registry_contract') as mock_registry,
@@ -266,7 +305,7 @@ class TestPublicKeysManagerGetUnregistered:
         manager.public_keys = [PUBKEY_1]
         manager.registered_public_keys = set()
 
-        AppState().network_validators_block = BlockNumber(100)
+        manager.block_number = BlockNumber(100)
         with (
             patch('src.relayer.public_keys.execution_client') as mock_exec,
             patch('src.relayer.public_keys.validators_registry_contract') as mock_registry,

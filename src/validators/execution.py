@@ -1,4 +1,3 @@
-import logging
 import struct
 
 from eth_typing import BlockNumber, HexStr
@@ -9,9 +8,6 @@ from web3.types import EventData
 from src.app_state import AppState
 from src.common.contracts import validators_registry_contract
 from src.config import settings
-from src.relayer.public_keys import public_keys_manager
-
-logger = logging.getLogger(__name__)
 
 
 class NetworkValidatorsProcessor(EventProcessor):
@@ -22,9 +18,6 @@ class NetworkValidatorsProcessor(EventProcessor):
 
     contract_event = 'DepositEvent'
 
-    def __init__(self, from_block: BlockNumber) -> None:
-        self._from_block = from_block
-
     @property
     def contract(self):  # type: ignore
         return validators_registry_contract
@@ -32,21 +25,17 @@ class NetworkValidatorsProcessor(EventProcessor):
     async def get_from_block(self) -> BlockNumber:
         # Returns first unprocessed block number
         # Used by EventScanner
-        return self._from_block
+        return BlockNumber(AppState().public_keys_manager.block_number + 1)
 
     async def process_events(self, events: list[EventData], to_block: BlockNumber) -> None:
+        public_keys_manager = AppState().public_keys_manager
         new_keys: set[HexStr] = set()
         for event in events:
             public_key = process_network_validator_event(event)
             if public_key and public_key in public_keys_manager.public_keys:
                 new_keys.add(public_key)
 
-        if new_keys:
-            public_keys_manager.registered_public_keys.update(new_keys)
-            logger.info('Found %d newly registered validators', len(new_keys))
-
-        AppState().network_validators_block = to_block
-        self._from_block = BlockNumber(to_block + 1)
+        public_keys_manager.update_registered_public_keys(new_keys, to_block)
 
 
 def process_network_validator_event(event: EventData) -> HexStr | None:

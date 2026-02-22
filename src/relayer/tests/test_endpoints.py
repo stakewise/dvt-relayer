@@ -16,7 +16,7 @@ from src.relayer.endpoints import (
     register_validators,
     withdraw_validators,
 )
-from src.relayer.public_keys import public_keys_manager
+from src.relayer.public_keys import PublicKeysManager
 from src.relayer.schema import (
     ValidatorsConsolidationRequest,
     ValidatorsFundRequest,
@@ -37,14 +37,10 @@ DUMMY_SIGNATURE = BLSSignature(b'\x01' * 96)
 
 @pytest.fixture(autouse=True)
 def _clean_singleton() -> None:  # type: ignore[misc]
-    """Clean AppState singleton and public_keys_manager state between tests."""
+    """Clean AppState singleton between tests."""
     Singleton._instances.pop(AppState, None)
-    public_keys_manager.public_keys = []
-    public_keys_manager.registered_public_keys = set()
     yield  # type: ignore[misc]
     Singleton._instances.pop(AppState, None)
-    public_keys_manager.public_keys = []
-    public_keys_manager.registered_public_keys = set()
 
 
 def _setup_app_state(
@@ -54,9 +50,11 @@ def _setup_app_state(
     """Helper to set up AppState and public_keys_manager state."""
     app_state = AppState()
 
+    public_keys_manager = PublicKeysManager()
     if unregistered_keys is not None:
         public_keys_manager.public_keys = list(unregistered_keys)
         # registered_public_keys stays empty, so get_unregistered returns all
+    app_state.public_keys_manager = public_keys_manager
 
     # Set up validators manager account
     test_account = Account.create()
@@ -72,7 +70,6 @@ class TestRegisterEndpoint:
     @pytest.fixture(autouse=True)
     def _mock_pending_deposits(self) -> None:  # type: ignore[misc]
         """Patch get_unregistered dependencies so no pending deposits are found."""
-        AppState().network_validators_block = 100
         with (
             patch('src.relayer.public_keys.execution_client') as mock_exec,
             patch('src.relayer.public_keys.validators_registry_contract') as mock_registry,

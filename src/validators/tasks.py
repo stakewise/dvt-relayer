@@ -1,7 +1,6 @@
 import logging
 from time import time
 
-from eth_typing import BlockNumber
 from sw_utils import EventScanner
 
 from src.app_state import AppState
@@ -15,9 +14,8 @@ logger = logging.getLogger(__name__)
 
 
 class NetworkValidatorsTask(BaseTask):
-    def __init__(self, from_block: BlockNumber) -> None:
-        network_validators_processor = NetworkValidatorsProcessor(from_block)
-        self.network_validators_scanner = EventScanner(network_validators_processor)
+    def __init__(self) -> None:
+        self.network_validators_scanner = EventScanner(NetworkValidatorsProcessor())
 
     async def process_block(self) -> None:
         chain_state = await get_chain_finalized_head()

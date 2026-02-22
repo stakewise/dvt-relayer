@@ -5,7 +5,6 @@ from time import time
 from typing import AsyncIterator, Callable
 
 import uvicorn
-from eth_typing import BlockNumber
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -18,7 +17,7 @@ from src.common.utils import get_project_version
 from src.config import settings
 from src.protocol_config.tasks import ProtocolConfigTask, update_protocol_config
 from src.relayer.endpoints import router as relayer_router
-from src.relayer.public_keys import public_keys_manager
+from src.relayer.public_keys import PublicKeysManager
 from src.relayer.validators_manager import load_validators_manager_account
 from src.validators.endpoints import router as validators_router
 from src.validators.tasks import CleanupValidatorsTask, NetworkValidatorsTask
@@ -41,10 +40,8 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator:
     app_state.validators_manager_account = validators_manager
     logger.info('validators manager address: %s', validators_manager.address)
 
-    # load public keys and fetch registered keys from consensus layer
-    public_keys_manager.load_from_file()
     chain_head = await get_chain_finalized_head()
-    await public_keys_manager.fetch_registered()
+    app_state.public_keys_manager = await PublicKeysManager.build(chain_head)
 
     app_state.validators = {}
 
@@ -55,9 +52,7 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator:
     # Note: we create a strong references to the tasks. Helps to avoid garbage collecting.
     protocol_config_task = asyncio.create_task(ProtocolConfigTask().run())
     cleanup_validators_task = asyncio.create_task(CleanupValidatorsTask().run())
-    network_validators_task = asyncio.create_task(
-        NetworkValidatorsTask(BlockNumber(chain_head.block_number + 1)).run()
-    )
+    network_validators_task = asyncio.create_task(NetworkValidatorsTask().run())
 
     yield
 
