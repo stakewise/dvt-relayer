@@ -67,11 +67,10 @@ async def register_validators(
                     if validator.deposit_signature is not None
                     else None
                 ),
-                exit_signature=(
-                    Web3.to_hex(validator.exit_signature)
-                    if validator.exit_signature is not None
-                    else None
-                ),
+                # Raw exit signature is not passed to the Operator, as it is sensitive
+                # and should not be exposed on public Relayer instance.
+                # The Operator should use oracles_exit_signature_shares.
+                exit_signature=None,
                 oracles_exit_signature_shares=(
                     schema.OraclesExitSignatureShares.from_dataclass(oracles_shares)
                     if oracles_shares
