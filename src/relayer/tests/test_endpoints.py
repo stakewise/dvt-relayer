@@ -78,7 +78,6 @@ class TestRegisterEndpoint:
             mock_registry.events.DepositEvent.get_logs = AsyncMock(return_value=[])
             yield  # type: ignore[misc]
 
-    @pytest.mark.asyncio
     async def test_register_creates_new_validators(self) -> None:
         """Test that /register creates validators for unregistered public keys."""
         _setup_app_state(unregistered_keys=[PUBKEY_1, PUBKEY_2])
@@ -98,7 +97,6 @@ class TestRegisterEndpoint:
         assert response.validators[0].amount == Gwei(32000000000)
         assert response.validators_manager_signature is None  # no signatures ready
 
-    @pytest.mark.asyncio
     async def test_register_returns_existing_validators(self) -> None:
         """Test that /register returns existing validators if they match."""
         existing_validator = Validator(
@@ -126,7 +124,6 @@ class TestRegisterEndpoint:
         assert len(response.validators) == 1
         assert response.validators[0].public_key == PUBKEY_1
 
-    @pytest.mark.asyncio
     async def test_register_with_signatures_ready(self) -> None:
         """Test that /register returns validators_manager_signature when all sigs ready."""
         validator = Validator(
@@ -160,7 +157,6 @@ class TestRegisterEndpoint:
         assert response.validators_manager_signature is not None
         assert len(response.validators) == 1
 
-    @pytest.mark.asyncio
     async def test_register_replaces_validator_on_index_mismatch(self) -> None:
         """Test that a new validator is created if the index doesn't match."""
         existing_validator = Validator(
@@ -192,7 +188,6 @@ class TestRegisterEndpoint:
 
 
 class TestFundEndpoint:
-    @pytest.mark.asyncio
     async def test_fund_validators(self) -> None:
         """Test that /fund returns a validators_manager_signature."""
         _setup_app_state()
@@ -214,7 +209,6 @@ class TestFundEndpoint:
 
 
 class TestWithdrawEndpoint:
-    @pytest.mark.asyncio
     async def test_withdraw_validators(self) -> None:
         """Test that /withdraw returns a validators_manager_signature."""
         _setup_app_state()
@@ -236,7 +230,6 @@ class TestWithdrawEndpoint:
 
 
 class TestConsolidateEndpoint:
-    @pytest.mark.asyncio
     async def test_consolidate_validators(self) -> None:
         """Test that /consolidate returns a validators_manager_signature."""
         _setup_app_state()
