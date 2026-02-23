@@ -30,7 +30,10 @@ async def register_validators(
 
     now = int(time())
 
-    for i, (public_key, amount) in enumerate(zip(app_state.public_keys, request.amounts)):
+    # Build validators list and check if signatures are ready for all validators
+    for i, (public_key, amount) in enumerate(
+        zip(await app_state.public_keys_manager.get_unregistered(), request.amounts)
+    ):
         validator_index = request.validators_start_index + i
         validator = app_state.validators.get(public_key)
 
@@ -50,6 +53,7 @@ async def register_validators(
 
         validators.append(validator)
 
+    # Build response
     validator_items: list[schema.ValidatorsRegisterResponseItem] = []
 
     for validator in validators:
@@ -63,11 +67,10 @@ async def register_validators(
                     if validator.deposit_signature is not None
                     else None
                 ),
-                exit_signature=(
-                    Web3.to_hex(validator.exit_signature)
-                    if validator.exit_signature is not None
-                    else None
-                ),
+                # Raw exit signature is not passed to the Operator, as it is sensitive
+                # and should not be exposed on public Relayer instance.
+                # The Operator should use oracles_exit_signature_shares.
+                exit_signature=None,
                 oracles_exit_signature_shares=(
                     schema.OraclesExitSignatureShares.from_dataclass(oracles_shares)
                     if oracles_shares
@@ -76,6 +79,7 @@ async def register_validators(
             )
         )
 
+    # Compute validators manager signature
     validators_manager_signature: HexStr | None = None
 
     if is_signatures_ready_for_all_validators:
