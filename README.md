@@ -65,7 +65,7 @@ docker run --rm -ti \
 
 Set paths in `.env` to point inside the container, e.g.:
 
-```
+```ini
 VALIDATORS_MANAGER_KEY_FILE=/data/validators-manager-key.json
 VALIDATORS_MANAGER_PASSWORD_FILE=/data/validators-manager-password.txt
 PUBLIC_KEYS_FILE=/data/public_keys.csv
