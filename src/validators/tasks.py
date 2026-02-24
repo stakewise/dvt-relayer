@@ -31,7 +31,7 @@ class CleanupValidatorsTask(BaseTask):
         public_keys = []
         now = int(time())
         for public_key, validator in app_state.validators.items():
-            if now - validator.created_at > settings.VALIDATOR_LIFETIME:
+            if now - validator.created_at > settings.validator_lifetime:
                 public_keys.append(public_key)
 
         for public_key in public_keys:
