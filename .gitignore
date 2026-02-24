@@ -173,3 +173,6 @@ cython_debug/
 # Claude
 .claude
 CLAUDE.md
+
+# request files
+*.http
