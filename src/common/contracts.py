@@ -54,11 +54,11 @@ class ContractWrapper:
 
         # Build all chunk ranges from newest to oldest
         ranges: list[tuple[BlockNumber, BlockNumber]] = []
-        current_to = to_block
-        while current_to >= from_block:
-            chunk_from = BlockNumber(max(current_to - blocks_range + 1, from_block))
-            ranges.append((chunk_from, BlockNumber(current_to)))
-            current_to = BlockNumber(current_to - blocks_range)
+        chunk_to = to_block
+        while chunk_to >= from_block:
+            chunk_from = BlockNumber(max(chunk_to - blocks_range + 1, from_block))
+            ranges.append((chunk_from, chunk_to))
+            chunk_to = BlockNumber(chunk_to - blocks_range)
 
         # from_block and to_block are both inclusive
         async def fetch_chunk(chunk_from: BlockNumber, chunk_to: BlockNumber) -> list[EventData]:
