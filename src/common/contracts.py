@@ -1,4 +1,5 @@
 import asyncio
+import itertools
 import json
 import os
 from functools import cached_property
@@ -55,10 +56,11 @@ class ContractWrapper:
         ranges: list[tuple[BlockNumber, BlockNumber]] = []
         current_to = to_block
         while current_to >= from_block:
-            chunk_from = BlockNumber(max(current_to - blocks_range, from_block))
+            chunk_from = BlockNumber(max(current_to - blocks_range + 1, from_block))
             ranges.append((chunk_from, BlockNumber(current_to)))
-            current_to = BlockNumber(current_to - blocks_range - 1)
+            current_to = BlockNumber(current_to - blocks_range)
 
+        # from_block and to_block are both inclusive
         async def fetch_chunk(chunk_from: BlockNumber, chunk_to: BlockNumber) -> list[EventData]:
             return await event.get_logs(
                 from_block=chunk_from,
@@ -66,9 +68,8 @@ class ContractWrapper:
                 argument_filters=argument_filters,
             )
 
-        # Process chunks in batches of MAX_CONCURRENCY (newest-first), abort on first hit
-        for batch_start in range(0, len(ranges), settings.max_concurrency):
-            batch = ranges[batch_start : batch_start + settings.max_concurrency]
+        # Process chunks in batches (newest-first), abort on first hit
+        for batch in itertools.batched(ranges, settings.event_logs_max_concurrency):
             batch_results = await asyncio.gather(*[fetch_chunk(f, t) for f, t in batch])
             for chunk_events in batch_results:
                 if chunk_events:
