@@ -9,7 +9,6 @@ from web3 import Web3
 from web3.types import Gwei
 
 from src.app_state import AppState
-from src.common.typings import Singleton
 from src.relayer.endpoints import (
     consolidate_validators,
     fund_validators,
@@ -33,14 +32,6 @@ VAULT_ADDRESS = Web3.to_checksum_address('0x1234567890abcdef1234567890abcdef1234
 
 # A dummy 96-byte BLS signature
 DUMMY_SIGNATURE = BLSSignature(b'\x01' * 96)
-
-
-@pytest.fixture(autouse=True)
-def _clean_singleton() -> None:  # type: ignore[misc]
-    """Clean AppState singleton between tests."""
-    Singleton._instances.pop(AppState, None)
-    yield  # type: ignore[misc]
-    Singleton._instances.pop(AppState, None)
 
 
 def _setup_app_state(
