@@ -8,5 +8,5 @@ from src.common.typings import Singleton
 def _clean_singleton() -> None:  # type: ignore[misc]
     """Clean AppState singleton between tests."""
     Singleton._instances.pop(AppState, None)
-    yield  # type: ignore[misc]
+    yield
     Singleton._instances.pop(AppState, None)
