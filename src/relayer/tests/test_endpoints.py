@@ -251,13 +251,6 @@ class TestConsolidateEndpoint:
 
 DVT_VAULT = '0x8ae5c1046158526cf236f74d8fb88fabe2e94aca'
 
-REGISTER_REQUEST = {
-    'vault': DVT_VAULT,
-    'validators_start_index': 10,
-    'amounts': [32000000000],
-    'validator_type': '0x02',
-}
-
 
 class TestRegisterSignatureAggregation:
     """Test full flow: /register → sidecar /signatures submissions → /register with all ready."""
@@ -286,8 +279,15 @@ class TestRegisterSignatureAggregation:
         public_key = HexStr(sidecar_shares_1val[0]['shares'][0]['public_key'])
         _setup_app_state(unregistered_keys=[public_key])
 
+        register_request = {
+            'vault': DVT_VAULT,
+            'validators_start_index': 10,
+            'amounts': [32000000000],
+            'validator_type': '0x02',
+        }
+
         # Step 1: initial /register creates the validator with no signatures
-        resp = await test_client.post('/register', json=REGISTER_REQUEST)
+        resp = await test_client.post('/register', json=register_request)
         assert resp.status_code == 200
         data = resp.json()
         assert len(data['validators']) == 1
@@ -316,11 +316,73 @@ class TestRegisterSignatureAggregation:
         mock_root = b'\x00' * 32
         with patch('src.relayer.endpoints.validators_registry_contract') as mock_contract:
             mock_contract.get_registry_root = AsyncMock(return_value=mock_root)
-            resp = await test_client.post('/register', json=REGISTER_REQUEST)
+            resp = await test_client.post('/register', json=register_request)
 
         assert resp.status_code == 200
         data = resp.json()
         assert len(data['validators']) == 1
         assert data['validators'][0]['deposit_signature'] is not None
         assert data['validators'][0]['oracles_exit_signature_shares'] is not None
+        assert data['validators_manager_signature'] is not None
+
+    @pytest.mark.parametrize(
+        'skip_share_index',
+        [263, 280, 281, 282],
+    )
+    async def test_register_2_validators_with_signature_aggregation(
+        self,
+        skip_share_index: int,
+        sidecar_shares_2val: list[dict],
+        test_client: AsyncClient,
+    ) -> None:
+        """Submit 3 of 4 sidecar shares for 2 validators, verify threshold aggregation."""
+        public_keys = [HexStr(s['public_key']) for s in sidecar_shares_2val[0]['shares']]
+        _setup_app_state(unregistered_keys=public_keys)
+
+        register_request = {
+            'vault': DVT_VAULT,
+            'validators_start_index': 10,
+            'amounts': [32000000000, 34000000000],
+            'validator_type': '0x02',
+        }
+
+        # Step 1: initial /register creates validators with no signatures
+        resp = await test_client.post('/register', json=register_request)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data['validators']) == 2
+        assert data['validators'][0]['deposit_signature'] is None
+        assert data['validators'][1]['deposit_signature'] is None
+        assert data['validators_manager_signature'] is None
+
+        # Step 2: submit signature shares from 3 sidecars (skip one)
+        shares_to_submit = [s for s in sidecar_shares_2val if s['share_index'] != skip_share_index]
+        mock_oracles_shares = OraclesExitSignatureShares(
+            public_keys=[faker.ecies_public_key()],
+            encrypted_exit_signatures=[faker.validator_signature()],
+        )
+        with (
+            patch(
+                'src.validators.endpoints.get_oracles_exit_signature_shares',
+                new_callable=AsyncMock,
+                return_value=mock_oracles_shares,
+            ),
+            patch('src.config.settings.signature_threshold', 3),
+        ):
+            for sidecar_data in shares_to_submit:
+                resp = await test_client.post('/signatures', json=sidecar_data)
+                assert resp.status_code == 200
+
+        # Step 3: /register again — all signatures should be ready for both validators
+        mock_root = b'\x00' * 32
+        with patch('src.relayer.endpoints.validators_registry_contract') as mock_contract:
+            mock_contract.get_registry_root = AsyncMock(return_value=mock_root)
+            resp = await test_client.post('/register', json=register_request)
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data['validators']) == 2
+        for validator in data['validators']:
+            assert validator['deposit_signature'] is not None
+            assert validator['oracles_exit_signature_shares'] is not None
         assert data['validators_manager_signature'] is not None
