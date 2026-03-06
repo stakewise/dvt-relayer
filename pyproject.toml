@@ -38,6 +38,7 @@ coverage = "==7.3.2"
 aioresponses = "^0.7.4"
 types-requests = "^2.31.0"
 types-setuptools = "^70.0.0"
+httpx = "^0.28.1"
 
 [build-system]
 requires = ["poetry-core"]
