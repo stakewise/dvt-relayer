@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from time import time
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -19,6 +20,18 @@ PUBKEY_2 = faker.validator_public_key()
 PUBKEY_3 = faker.validator_public_key()
 
 VAULT_ADDRESS = '0x1234567890abcdef1234567890abcdef12345678'
+
+
+@contextmanager
+def patch_vault_contract(validators_manager_nonce: int):
+    with patch('src.relayer.endpoints.VaultContract') as mock_vault_class:
+        mock_vault_instance = MagicMock()
+        mock_vault_instance.validators_manager_nonce = AsyncMock(
+            return_value=validators_manager_nonce
+        )
+        mock_vault_class.return_value = mock_vault_instance
+        yield
+
 
 # A dummy 96-byte BLS signature
 DUMMY_SIGNATURE = BLSSignature(b'\x01' * 96)
@@ -185,11 +198,7 @@ class TestFundEndpoint:
         """Test that /fund returns a validators_manager_signature."""
         _setup_app_state()
 
-        with patch('src.relayer.endpoints.VaultContract') as mock_vault_class:
-            mock_vault_instance = MagicMock()
-            mock_vault_instance.validators_manager_nonce = AsyncMock(return_value=1)
-            mock_vault_class.return_value = mock_vault_instance
-
+        with patch_vault_contract(validators_manager_nonce=1):
             resp = await test_client.post(
                 '/fund',
                 json={
@@ -208,11 +217,7 @@ class TestWithdrawEndpoint:
         """Test that /withdraw returns a validators_manager_signature."""
         _setup_app_state()
 
-        with patch('src.relayer.endpoints.VaultContract') as mock_vault_class:
-            mock_vault_instance = MagicMock()
-            mock_vault_instance.validators_manager_nonce = AsyncMock(return_value=1)
-            mock_vault_class.return_value = mock_vault_instance
-
+        with patch_vault_contract(validators_manager_nonce=1):
             resp = await test_client.post(
                 '/withdraw',
                 json={
@@ -231,11 +236,7 @@ class TestConsolidateEndpoint:
         """Test that /consolidate returns a validators_manager_signature."""
         _setup_app_state()
 
-        with patch('src.relayer.endpoints.VaultContract') as mock_vault_class:
-            mock_vault_instance = MagicMock()
-            mock_vault_instance.validators_manager_nonce = AsyncMock(return_value=1)
-            mock_vault_class.return_value = mock_vault_instance
-
+        with patch_vault_contract(validators_manager_nonce=1):
             resp = await test_client.post(
                 '/consolidate',
                 json={
