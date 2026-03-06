@@ -10,19 +10,7 @@ from web3 import Web3
 from web3.types import Gwei
 
 from src.app_state import AppState
-from src.relayer.endpoints import (
-    consolidate_validators,
-    fund_validators,
-    register_validators,
-    withdraw_validators,
-)
 from src.relayer.public_keys import PublicKeysManager
-from src.relayer.schema import (
-    ValidatorsConsolidationRequest,
-    ValidatorsFundRequest,
-    ValidatorsRegisterRequest,
-    ValidatorsWithdrawalRequest,
-)
 from src.relayer.typings import Validator, ValidatorType
 from src.validators.typings import OraclesExitSignatureShares
 
@@ -30,7 +18,7 @@ PUBKEY_1 = faker.validator_public_key()
 PUBKEY_2 = faker.validator_public_key()
 PUBKEY_3 = faker.validator_public_key()
 
-VAULT_ADDRESS = Web3.to_checksum_address('0x1234567890abcdef1234567890abcdef12345678')
+VAULT_ADDRESS = '0x1234567890abcdef1234567890abcdef12345678'
 
 # A dummy 96-byte BLS signature
 DUMMY_SIGNATURE = BLSSignature(b'\x01' * 96)
@@ -71,30 +59,33 @@ class TestRegisterEndpoint:
             mock_registry.events.DepositEvent.get_logs = AsyncMock(return_value=[])
             yield  # type: ignore[misc]
 
-    async def test_register_creates_new_validators(self) -> None:
+    async def test_register_creates_new_validators(self, test_client: AsyncClient) -> None:
         """Test that /register creates validators for unregistered public keys."""
         _setup_app_state(unregistered_keys=[PUBKEY_1, PUBKEY_2])
 
-        request = ValidatorsRegisterRequest(
-            vault=VAULT_ADDRESS,
-            validators_start_index=100,
-            amounts=[Gwei(32000000000), Gwei(32000000000)],
-            validator_type=ValidatorType.V1,
+        resp = await test_client.post(
+            '/register',
+            json={
+                'vault': VAULT_ADDRESS,
+                'validators_start_index': 100,
+                'amounts': [32000000000, 32000000000],
+                'validator_type': '0x01',
+            },
         )
 
-        response = await register_validators(request)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data['validators']) == 2
+        assert data['validators'][0]['public_key'] == PUBKEY_1
+        assert data['validators'][1]['public_key'] == PUBKEY_2
+        assert data['validators'][0]['amount'] == 32000000000
+        assert data['validators_manager_signature'] is None
 
-        assert len(response.validators) == 2
-        assert response.validators[0].public_key == PUBKEY_1
-        assert response.validators[1].public_key == PUBKEY_2
-        assert response.validators[0].amount == Gwei(32000000000)
-        assert response.validators_manager_signature is None  # no signatures ready
-
-    async def test_register_returns_existing_validators(self) -> None:
+    async def test_register_returns_existing_validators(self, test_client: AsyncClient) -> None:
         """Test that /register returns existing validators if they match."""
         existing_validator = Validator(
             public_key=PUBKEY_1,
-            vault=VAULT_ADDRESS,
+            vault=Web3.to_checksum_address(VAULT_ADDRESS),
             validator_index=100,
             created_at=int(time()),
             amount=Gwei(32000000000),
@@ -105,23 +96,26 @@ class TestRegisterEndpoint:
             validators={PUBKEY_1: existing_validator},
         )
 
-        request = ValidatorsRegisterRequest(
-            vault=VAULT_ADDRESS,
-            validators_start_index=100,
-            amounts=[Gwei(32000000000)],
-            validator_type=ValidatorType.V1,
+        resp = await test_client.post(
+            '/register',
+            json={
+                'vault': VAULT_ADDRESS,
+                'validators_start_index': 100,
+                'amounts': [32000000000],
+                'validator_type': '0x01',
+            },
         )
 
-        response = await register_validators(request)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data['validators']) == 1
+        assert data['validators'][0]['public_key'] == PUBKEY_1
 
-        assert len(response.validators) == 1
-        assert response.validators[0].public_key == PUBKEY_1
-
-    async def test_register_with_signatures_ready(self) -> None:
+    async def test_register_with_signatures_ready(self, test_client: AsyncClient) -> None:
         """Test that /register returns validators_manager_signature when all sigs ready."""
         validator = Validator(
             public_key=PUBKEY_1,
-            vault=VAULT_ADDRESS,
+            vault=Web3.to_checksum_address(VAULT_ADDRESS),
             validator_index=100,
             created_at=int(time()),
             amount=Gwei(32000000000),
@@ -134,27 +128,31 @@ class TestRegisterEndpoint:
             validators={PUBKEY_1: validator},
         )
 
-        request = ValidatorsRegisterRequest(
-            vault=VAULT_ADDRESS,
-            validators_start_index=100,
-            amounts=[Gwei(32000000000)],
-            validator_type=ValidatorType.V1,
-        )
-
-        # Mock the validators_registry_contract.get_registry_root() call
         mock_root = b'\x00' * 32
         with patch('src.relayer.endpoints.validators_registry_contract') as mock_contract:
             mock_contract.get_registry_root = AsyncMock(return_value=mock_root)
-            response = await register_validators(request)
+            resp = await test_client.post(
+                '/register',
+                json={
+                    'vault': VAULT_ADDRESS,
+                    'validators_start_index': 100,
+                    'amounts': [32000000000],
+                    'validator_type': '0x01',
+                },
+            )
 
-        assert response.validators_manager_signature is not None
-        assert len(response.validators) == 1
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data['validators_manager_signature'] is not None
+        assert len(data['validators']) == 1
 
-    async def test_register_replaces_validator_on_index_mismatch(self) -> None:
+    async def test_register_replaces_validator_on_index_mismatch(
+        self, test_client: AsyncClient
+    ) -> None:
         """Test that a new validator is created if the index doesn't match."""
         existing_validator = Validator(
             public_key=PUBKEY_1,
-            vault=VAULT_ADDRESS,
+            vault=Web3.to_checksum_address(VAULT_ADDRESS),
             validator_index=50,  # different index
             created_at=int(time()),
             amount=Gwei(32000000000),
@@ -165,82 +163,90 @@ class TestRegisterEndpoint:
             validators={PUBKEY_1: existing_validator},
         )
 
-        request = ValidatorsRegisterRequest(
-            vault=VAULT_ADDRESS,
-            validators_start_index=100,  # new index
-            amounts=[Gwei(32000000000)],
-            validator_type=ValidatorType.V1,
+        resp = await test_client.post(
+            '/register',
+            json={
+                'vault': VAULT_ADDRESS,
+                'validators_start_index': 100,
+                'amounts': [32000000000],
+                'validator_type': '0x01',
+            },
         )
 
-        response = await register_validators(request)
-
-        assert len(response.validators) == 1
-        # Validator should have been replaced
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data['validators']) == 1
         app_state = AppState()
         assert app_state.validators[PUBKEY_1].validator_index == 100
 
 
 class TestFundEndpoint:
-    async def test_fund_validators(self) -> None:
+    async def test_fund_validators(self, test_client: AsyncClient) -> None:
         """Test that /fund returns a validators_manager_signature."""
         _setup_app_state()
 
-        request = ValidatorsFundRequest(
-            vault=VAULT_ADDRESS,
-            public_keys=[PUBKEY_1, PUBKEY_2],
-            amounts=[Gwei(32000000000), Gwei(32000000000)],
-        )
-
         with patch('src.relayer.endpoints.VaultContract') as mock_vault_class:
             mock_vault_instance = MagicMock()
             mock_vault_instance.validators_manager_nonce = AsyncMock(return_value=1)
             mock_vault_class.return_value = mock_vault_instance
 
-            response = await fund_validators(request)
+            resp = await test_client.post(
+                '/fund',
+                json={
+                    'vault': VAULT_ADDRESS,
+                    'public_keys': [PUBKEY_1, PUBKEY_2],
+                    'amounts': [32000000000, 32000000000],
+                },
+            )
 
-        assert response.validators_manager_signature is not None
+        assert resp.status_code == 200
+        assert resp.json()['validators_manager_signature'] is not None
 
 
 class TestWithdrawEndpoint:
-    async def test_withdraw_validators(self) -> None:
+    async def test_withdraw_validators(self, test_client: AsyncClient) -> None:
         """Test that /withdraw returns a validators_manager_signature."""
         _setup_app_state()
 
-        request = ValidatorsWithdrawalRequest(
-            vault=VAULT_ADDRESS,
-            public_keys=[PUBKEY_1],
-            amounts=[Gwei(32000000000)],
-        )
-
         with patch('src.relayer.endpoints.VaultContract') as mock_vault_class:
             mock_vault_instance = MagicMock()
             mock_vault_instance.validators_manager_nonce = AsyncMock(return_value=1)
             mock_vault_class.return_value = mock_vault_instance
 
-            response = await withdraw_validators(request)
+            resp = await test_client.post(
+                '/withdraw',
+                json={
+                    'vault': VAULT_ADDRESS,
+                    'public_keys': [PUBKEY_1],
+                    'amounts': [32000000000],
+                },
+            )
 
-        assert response.validators_manager_signature is not None
+        assert resp.status_code == 200
+        assert resp.json()['validators_manager_signature'] is not None
 
 
 class TestConsolidateEndpoint:
-    async def test_consolidate_validators(self) -> None:
+    async def test_consolidate_validators(self, test_client: AsyncClient) -> None:
         """Test that /consolidate returns a validators_manager_signature."""
         _setup_app_state()
-
-        request = ValidatorsConsolidationRequest(
-            vault=VAULT_ADDRESS,
-            source_public_keys=[PUBKEY_1],
-            target_public_keys=[PUBKEY_2],
-        )
 
         with patch('src.relayer.endpoints.VaultContract') as mock_vault_class:
             mock_vault_instance = MagicMock()
             mock_vault_instance.validators_manager_nonce = AsyncMock(return_value=1)
             mock_vault_class.return_value = mock_vault_instance
 
-            response = await consolidate_validators(request)
+            resp = await test_client.post(
+                '/consolidate',
+                json={
+                    'vault': VAULT_ADDRESS,
+                    'source_public_keys': [PUBKEY_1],
+                    'target_public_keys': [PUBKEY_2],
+                },
+            )
 
-        assert response.validators_manager_signature is not None
+        assert resp.status_code == 200
+        assert resp.json()['validators_manager_signature'] is not None
 
 
 DVT_VAULT = '0x8ae5c1046158526cf236f74d8fb88fabe2e94aca'
@@ -289,9 +295,7 @@ class TestRegisterSignatureAggregation:
         assert data['validators_manager_signature'] is None
 
         # Step 2: submit signature shares from 3 sidecars (skip one)
-        shares_to_submit = [
-            s for s in sidecar_shares_1val if s['share_index'] != skip_share_index
-        ]
+        shares_to_submit = [s for s in sidecar_shares_1val if s['share_index'] != skip_share_index]
         mock_oracles_shares = OraclesExitSignatureShares(
             public_keys=[faker.ecies_public_key()],
             encrypted_exit_signatures=[faker.validator_signature()],
