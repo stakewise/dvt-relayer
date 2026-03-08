@@ -11,9 +11,10 @@ from web3 import Web3
 from web3.types import Gwei
 
 from src.app_state import AppState
+from src.config.networks import NETWORKS
 from src.relayer.public_keys import PublicKeysManager
+from src.relayer.tests.factories import create_protocol_config
 from src.relayer.typings import Validator, ValidatorType
-from src.validators.typings import OraclesExitSignatureShares
 
 PUBKEY_1 = faker.validator_public_key()
 PUBKEY_2 = faker.validator_public_key()
@@ -53,6 +54,9 @@ def _setup_app_state(
     # Set up validators manager account
     test_account = Account.create()
     app_state.validators_manager_account = test_account
+
+    # Set up protocol config with valid oracle keys
+    app_state.protocol_config = create_protocol_config()
 
     # Set up validators dict
     app_state.validators = validators or {}
@@ -258,9 +262,11 @@ class TestRegisterSignatureAggregation:
 
     @pytest.fixture(autouse=True)
     def _mock_pending_deposits(self) -> None:  # type: ignore[misc]
+        hoodi_config = NETWORKS['hoodi']
         with (
             patch('src.relayer.public_keys.execution_client') as mock_exec,
             patch('src.relayer.public_keys.validators_registry_contract') as mock_registry,
+            patch('src.config.settings.network_config', hoodi_config),
         ):
             mock_exec.eth.get_block_number = AsyncMock(return_value=110)
             mock_registry.events.DepositEvent.get_logs = AsyncMock(return_value=[])
@@ -268,7 +274,7 @@ class TestRegisterSignatureAggregation:
 
     @pytest.mark.parametrize(
         'skip_share_index',
-        [263, 280, 281, 282],
+        [None, 263, 280, 281, 282],
     )
     async def test_register_with_signature_aggregation(
         self,
@@ -276,7 +282,11 @@ class TestRegisterSignatureAggregation:
         sidecar_shares_1val: list[dict],
         test_client: AsyncClient,
     ) -> None:
-        """Submit 3 of 4 sidecar shares (skipping one), verify threshold aggregation works."""
+        """Submit sidecar shares, verify threshold aggregation works.
+
+        When skip_share_index is None, all 4 shares are submitted (redundant shares case).
+        Otherwise, 3 of 4 shares are submitted (skipping one).
+        """
         public_key = HexStr(sidecar_shares_1val[0]['shares'][0]['public_key'])
         _setup_app_state(unregistered_keys=[public_key])
 
@@ -297,18 +307,7 @@ class TestRegisterSignatureAggregation:
 
         # Step 2: submit signature shares from 3 sidecars (skip one)
         shares_to_submit = [s for s in sidecar_shares_1val if s['share_index'] != skip_share_index]
-        mock_oracles_shares = OraclesExitSignatureShares(
-            public_keys=[faker.ecies_public_key()],
-            encrypted_exit_signatures=[faker.validator_signature()],
-        )
-        with (
-            patch(
-                'src.validators.endpoints.get_oracles_exit_signature_shares',
-                new_callable=AsyncMock,
-                return_value=mock_oracles_shares,
-            ),
-            patch('src.config.settings.signature_threshold', 3),
-        ):
+        with patch('src.config.settings.signature_threshold', 3):
             for sidecar_data in shares_to_submit:
                 resp = await test_client.post('/signatures', json=sidecar_data)
                 assert resp.status_code == 200
@@ -328,7 +327,7 @@ class TestRegisterSignatureAggregation:
 
     @pytest.mark.parametrize(
         'skip_share_index',
-        [263, 280, 281, 282],
+        [None, 263, 280, 281, 282],
     )
     async def test_register_2_validators_with_signature_aggregation(
         self,
@@ -336,7 +335,11 @@ class TestRegisterSignatureAggregation:
         sidecar_shares_2val: list[dict],
         test_client: AsyncClient,
     ) -> None:
-        """Submit 3 of 4 sidecar shares for 2 validators, verify threshold aggregation."""
+        """Submit sidecar shares for 2 validators, verify threshold aggregation.
+
+        When skip_share_index is None, all 4 shares are submitted (redundant shares case).
+        Otherwise, 3 of 4 shares are submitted (skipping one).
+        """
         public_keys = [HexStr(s['public_key']) for s in sidecar_shares_2val[0]['shares']]
         _setup_app_state(unregistered_keys=public_keys)
 
@@ -358,18 +361,7 @@ class TestRegisterSignatureAggregation:
 
         # Step 2: submit signature shares from 3 sidecars (skip one)
         shares_to_submit = [s for s in sidecar_shares_2val if s['share_index'] != skip_share_index]
-        mock_oracles_shares = OraclesExitSignatureShares(
-            public_keys=[faker.ecies_public_key()],
-            encrypted_exit_signatures=[faker.validator_signature()],
-        )
-        with (
-            patch(
-                'src.validators.endpoints.get_oracles_exit_signature_shares',
-                new_callable=AsyncMock,
-                return_value=mock_oracles_shares,
-            ),
-            patch('src.config.settings.signature_threshold', 3),
-        ):
+        with patch('src.config.settings.signature_threshold', 3):
             for sidecar_data in shares_to_submit:
                 resp = await test_client.post('/signatures', json=sidecar_data)
                 assert resp.status_code == 200
