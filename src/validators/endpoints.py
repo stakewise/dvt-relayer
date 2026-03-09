@@ -42,7 +42,9 @@ async def submit_signature_shares(
             continue
 
         # Handle exit signature shares
-        if not validator.exit_signature_shares.get(request.share_index):
+        if validator.exit_signature is None and not validator.exit_signature_shares.get(
+            request.share_index
+        ):
             validator.exit_signature_shares[request.share_index] = BLSSignature(
                 Web3.to_bytes(hexstr=share.exit_signature)
             )
@@ -66,7 +68,9 @@ async def submit_signature_shares(
                 validator.oracles_exit_signature_shares = oracles_shares
 
         # Handle deposit signature shares
-        if not validator.deposit_signature_shares.get(request.share_index):
+        if validator.deposit_signature is None and not validator.deposit_signature_shares.get(
+            request.share_index
+        ):
             validator.deposit_signature_shares[request.share_index] = BLSSignature(
                 Web3.to_bytes(hexstr=share.deposit_signature)
             )
