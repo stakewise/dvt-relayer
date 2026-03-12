@@ -1,5 +1,5 @@
 from eth_typing import BLSSignature
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from web3 import Web3
 
 from src.app_state import AppState
@@ -55,7 +55,13 @@ async def submit_signature_shares(
                 if not validate_exit_signature(
                     validator.public_key, validator.validator_index, exit_signature
                 ):
-                    raise RuntimeError('invalid exit signature')
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            f'invalid exit signature for public_key={share.public_key},'
+                            f' share_index={request.share_index}'
+                        ),
+                    )
 
                 validator.exit_signature = exit_signature
 
@@ -86,7 +92,13 @@ async def submit_signature_shares(
                     validator.amount,
                     deposit_signature,
                 ):
-                    raise RuntimeError('invalid deposit signature')
+                    raise HTTPException(
+                        status_code=400,
+                        detail=(
+                            f'invalid deposit signature for public_key={share.public_key},'
+                            f' share_index={request.share_index}'
+                        ),
+                    )
 
                 validator.deposit_signature = deposit_signature
 

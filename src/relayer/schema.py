@@ -1,7 +1,8 @@
-from eth_typing import ChecksumAddress, HexStr
+from eth_typing import HexStr
 from pydantic import BaseModel
 from web3.types import Gwei
 
+from src.common.fields import ChecksumAddressField
 from src.relayer.typings import ValidatorType
 from src.validators.typings import (
     OraclesExitSignatureShares as OraclesExitSignatureSharesDataclass,
@@ -9,7 +10,7 @@ from src.validators.typings import (
 
 
 class ValidatorsRegisterRequest(BaseModel):
-    vault: ChecksumAddress
+    vault: ChecksumAddressField
     validators_start_index: int
     amounts: list[Gwei]
     validator_type: ValidatorType
@@ -43,19 +44,19 @@ class ValidatorsRegisterResponse(BaseModel):
 
 
 class ValidatorsFundRequest(BaseModel):
-    vault: ChecksumAddress
+    vault: ChecksumAddressField
     public_keys: list[HexStr]
     amounts: list[Gwei]
 
 
 class ValidatorsWithdrawalRequest(BaseModel):
-    vault: ChecksumAddress
+    vault: ChecksumAddressField
     public_keys: list[HexStr]
     amounts: list[Gwei]
 
 
 class ValidatorsConsolidationRequest(BaseModel):
-    vault: ChecksumAddress
+    vault: ChecksumAddressField
     source_public_keys: list[HexStr]
     target_public_keys: list[HexStr]
 
