@@ -32,6 +32,7 @@ class NetworkValidatorsProcessor(EventProcessor):
         new_keys: set[HexStr] = set()
         for event in events:
             public_key = process_network_validator_event(event)
+            # Track only deposit events for keys we manage
             if public_key and public_key in public_keys_manager.public_keys:
                 new_keys.add(public_key)
 
