@@ -35,7 +35,8 @@ class SignatureShareRequest(BaseModel):
 # End of signature shares request
 
 
-class SignatureShareResponse(BaseModel): ...
+class SignatureShareResponse(BaseModel):
+    ...
 
 
 # Validators data consumed by the DVT Sidecars to sign deposit messages and exit messages
