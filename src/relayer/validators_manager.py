@@ -139,4 +139,4 @@ def _create_and_sign_message(
     encoded_message = encode_typed_data(full_message=full_message)
     signed_msg = app_state.validators_manager_account.sign_message(encoded_message)
 
-    return HexStr(signed_msg.signature.hex())
+    return Web3.to_hex(signed_msg.signature)
