@@ -24,74 +24,74 @@ def _clean_app_state() -> None:  # type: ignore[misc]
 
 
 class TestPublicKeysManagerLoad:
-    def test_load_valid_csv(self) -> None:
-        """Test loading public keys from a valid CSV file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, newline='') as f:
+    def test_load_valid_file(self) -> None:
+        """Test loading public keys from a valid text file."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
             f.write(f'{PUBKEY_1}\n')
             f.write(f'{PUBKEY_2}\n')
-            csv_path = f.name
+            txt_path = f.name
 
         try:
             with patch('src.relayer.public_keys.settings') as mock_settings:
-                mock_settings.public_keys_file = csv_path
+                mock_settings.public_keys_file = txt_path
                 public_keys = PublicKeysManager.load_from_file()
 
             assert public_keys == [PUBKEY_1, PUBKEY_2]
         finally:
-            os.unlink(csv_path)
+            os.unlink(txt_path)
 
     def test_load_missing_file_raises(self) -> None:
         """Test that loading from a missing file raises ValueError."""
         with patch('src.relayer.public_keys.settings') as mock_settings:
-            mock_settings.public_keys_file = '/nonexistent/path/keys.csv'
+            mock_settings.public_keys_file = '/nonexistent/path/keys.txt'
             with pytest.raises(ValueError, match="Can't open public keys file"):
                 PublicKeysManager.load_from_file()
 
     def test_load_empty_file_raises(self) -> None:
         """Test that loading from a file with no valid keys raises ValueError."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, newline='') as f:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
             f.write('\n\n')
-            csv_path = f.name
+            txt_path = f.name
 
         try:
             with patch('src.relayer.public_keys.settings') as mock_settings:
-                mock_settings.public_keys_file = csv_path
+                mock_settings.public_keys_file = txt_path
                 with pytest.raises(ValueError, match='No public keys found'):
                     PublicKeysManager.load_from_file()
         finally:
-            os.unlink(csv_path)
+            os.unlink(txt_path)
 
-    def test_load_skips_empty_rows(self) -> None:
-        """Test that empty rows in the CSV are skipped."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, newline='') as f:
+    def test_load_skips_empty_lines(self) -> None:
+        """Test that empty lines are skipped."""
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
             f.write(f'{PUBKEY_1}\n')
             f.write('\n')
             f.write(f'{PUBKEY_2}\n')
-            csv_path = f.name
+            txt_path = f.name
 
         try:
             with patch('src.relayer.public_keys.settings') as mock_settings:
-                mock_settings.public_keys_file = csv_path
+                mock_settings.public_keys_file = txt_path
                 public_keys = PublicKeysManager.load_from_file()
 
             assert public_keys == [PUBKEY_1, PUBKEY_2]
         finally:
-            os.unlink(csv_path)
+            os.unlink(txt_path)
 
     def test_load_strips_whitespace(self) -> None:
         """Test that whitespace is stripped from public keys."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False, newline='') as f:
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
             f.write(f'  {PUBKEY_1}  \n')
-            csv_path = f.name
+            txt_path = f.name
 
         try:
             with patch('src.relayer.public_keys.settings') as mock_settings:
-                mock_settings.public_keys_file = csv_path
+                mock_settings.public_keys_file = txt_path
                 public_keys = PublicKeysManager.load_from_file()
 
             assert public_keys == [PUBKEY_1]
         finally:
-            os.unlink(csv_path)
+            os.unlink(txt_path)
 
 
 class TestPublicKeysManagerFetchRegistered:
