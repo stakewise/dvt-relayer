@@ -197,7 +197,34 @@ class TestRegisterEndpoint:
         assert app_state.validators[PUBKEY_1].validator_index == 100
 
 
+class TestRegisterEmptyAmounts:
+    async def test_register_empty_amounts_rejected(self, test_client: AsyncClient) -> None:
+        """Test that /register rejects empty amounts list."""
+        resp = await test_client.post(
+            '/register',
+            json={
+                'vault': VAULT_ADDRESS,
+                'validators_start_index': 100,
+                'amounts': [],
+                'validator_type': '0x01',
+            },
+        )
+        assert resp.status_code == 422
+
+
 class TestFundEndpoint:
+    async def test_fund_empty_amounts_rejected(self, test_client: AsyncClient) -> None:
+        """Test that /fund rejects empty amounts list."""
+        resp = await test_client.post(
+            '/fund',
+            json={
+                'vault': VAULT_ADDRESS,
+                'public_keys': [PUBKEY_1],
+                'amounts': [],
+            },
+        )
+        assert resp.status_code == 422
+
     async def test_fund_validators(self, test_client: AsyncClient) -> None:
         """Test that /fund returns a validators_manager_signature."""
         _setup_app_state()
@@ -217,6 +244,18 @@ class TestFundEndpoint:
 
 
 class TestWithdrawEndpoint:
+    async def test_withdraw_empty_amounts_rejected(self, test_client: AsyncClient) -> None:
+        """Test that /withdraw rejects empty amounts list."""
+        resp = await test_client.post(
+            '/withdraw',
+            json={
+                'vault': VAULT_ADDRESS,
+                'public_keys': [PUBKEY_1],
+                'amounts': [],
+            },
+        )
+        assert resp.status_code == 422
+
     async def test_withdraw_validators(self, test_client: AsyncClient) -> None:
         """Test that /withdraw returns a validators_manager_signature."""
         _setup_app_state()

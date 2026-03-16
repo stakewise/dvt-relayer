@@ -88,7 +88,8 @@ async def register_validators(
     # Compute validators manager signature
     validators_manager_signature: HexStr | None = None
 
-    if is_signatures_ready_for_all_validators:
+    # `validators` still may be empty if there are no unregistered public keys
+    if validators and is_signatures_ready_for_all_validators:
         validators_registry_root = await validators_registry_contract.get_registry_root()
         validators_manager_signature = get_validators_manager_signature_register(
             request.vault,

@@ -1,5 +1,5 @@
 from eth_typing import HexStr
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from web3.types import Gwei
 
 from src.common.fields import ChecksumAddressField
@@ -12,7 +12,7 @@ from src.validators.typings import (
 class ValidatorsRegisterRequest(BaseModel):
     vault: ChecksumAddressField
     validators_start_index: int
-    amounts: list[Gwei]
+    amounts: list[Gwei] = Field(min_length=1)
     validator_type: ValidatorType
 
 
@@ -46,13 +46,13 @@ class ValidatorsRegisterResponse(BaseModel):
 class ValidatorsFundRequest(BaseModel):
     vault: ChecksumAddressField
     public_keys: list[HexStr]
-    amounts: list[Gwei]
+    amounts: list[Gwei] = Field(min_length=1)
 
 
 class ValidatorsWithdrawalRequest(BaseModel):
     vault: ChecksumAddressField
     public_keys: list[HexStr]
-    amounts: list[Gwei]
+    amounts: list[Gwei] = Field(min_length=1)
 
 
 class ValidatorsConsolidationRequest(BaseModel):
