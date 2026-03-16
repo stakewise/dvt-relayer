@@ -176,3 +176,6 @@ CLAUDE.md
 
 # request files
 *.http
+
+# Public keys
+public_keys.txt
