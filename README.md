@@ -29,11 +29,47 @@ In production environment:
 3. `cp .env.example .env`
 4. Fill .env file with appropriate values
 
-## Run
+## Run from sources
 
 1. `poetry shell`
 2. `export PYTHONPATH=.`
 3. `python src/app.py`
+
+## Run with Docker
+
+```bash
+export DVT_RELAYER_VERSION=v1.0.0
+```
+
+Pull the image:
+
+```bash
+docker pull europe-west4-docker.pkg.dev/stakewiselabs/public/dvt-relayer:$DVT_RELAYER_VERSION
+```
+
+You can also build the image from source:
+
+```bash
+docker build --pull -t europe-west4-docker.pkg.dev/stakewiselabs/public/dvt-relayer:$DVT_RELAYER_VERSION .
+```
+
+Run the container, mounting a directory with your `.env` and key files:
+
+```bash
+docker run --rm -ti \
+  --env-file /path/to/.env \
+  -v /path/to/data:/data \
+  -p 8000:8000 \
+  europe-west4-docker.pkg.dev/stakewiselabs/public/dvt-relayer:$DVT_RELAYER_VERSION
+```
+
+Set paths in `.env` to point inside the container, e.g.:
+
+```ini
+VALIDATORS_MANAGER_KEY_FILE=/data/validators-manager-key.json
+VALIDATORS_MANAGER_PASSWORD_FILE=/data/validators-manager-password.txt
+PUBLIC_KEYS_FILE=/data/public_keys.txt
+```
 
 ## Test
 
@@ -43,6 +79,6 @@ See [DVT sidecar readme](https://github.com/stakewise/dvt-operator-sidecar/blob/
 
 DVT sidecar:
 
-1. Loads DV keystores
-2. Polls validator exits from Relayer
-3. Pushes exit signature shares to Relayer on behalf of DVT operators.
+1. Loads distributed validator (DV) keystores.
+2. Retrieves validator data from the Relayer.
+3. Submits deposit signature shares and exit signature shares to the Relayer on behalf of DVT operators.

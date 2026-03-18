@@ -31,14 +31,6 @@ ipfs_fetch_endpoints: list[str] = config(
 )
 ipfs_timeout: int = config('IPFS_TIMEOUT', default=60, cast=int)
 ipfs_retry_timeout: int = config('IPFS_RETRY_TIMEOUT', default=120, cast=int)
-genesis_validators_ipfs_timeout: int = config(
-    'GENESIS_VALIDATORS_IPFS_TIMEOUT', default=300, cast=int
-)
-genesis_validators_ipfs_retry_timeout: int = config(
-    'GENESIS_VALIDATORS_IPFS_RETRY_TIMEOUT', default=600, cast=int
-)
-
-database: str = config('DATABASE')
 
 # logging
 LOG_PLAIN = 'plain'
@@ -51,4 +43,11 @@ log_format: str = config('LOG_FORMAT', default=LOG_PLAIN)
 sentry_dsn: str = config('SENTRY_DSN', default='')
 sentry_environment = config('SENTRY_ENVIRONMENT', default='')
 
-VALIDATOR_LIFETIME: int = config('VALIDATOR_LIFETIME', default=3600, cast=int)
+validator_lifetime: int = config('VALIDATOR_LIFETIME', default=3600, cast=int)
+
+event_logs_max_concurrency: int = config('EVENT_LOGS_MAX_CONCURRENCY', default=4, cast=int)
+
+validators_manager_key_file: str = config('VALIDATORS_MANAGER_KEY_FILE')
+validators_manager_password_file: str = config('VALIDATORS_MANAGER_PASSWORD_FILE')
+
+public_keys_file: str = config('PUBLIC_KEYS_FILE')

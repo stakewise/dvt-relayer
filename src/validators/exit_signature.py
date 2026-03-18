@@ -1,8 +1,14 @@
 import ecies
 import milagro_bls_binding as bls
 from eth_typing import BLSPubkey, BLSSignature, HexStr
-from sw_utils import ConsensusFork, get_exit_message_signing_root
+from sw_utils import (
+    ConsensusFork,
+    get_exit_message_signing_root,
+    is_valid_deposit_data_signature,
+)
+from sw_utils.typings import Bytes32
 from web3 import Web3
+from web3.types import Gwei
 
 from src.app_state import AppState
 from src.config import settings
@@ -76,3 +82,18 @@ def validate_exit_signature(
     )
 
     return bls.Verify(Web3.to_bytes(hexstr=public_key), message, exit_signature)
+
+
+def validate_deposit_signature(
+    public_key: HexStr,
+    withdrawal_credentials: bytes,
+    amount: Gwei,
+    deposit_signature: BLSSignature,
+) -> bool:
+    return is_valid_deposit_data_signature(
+        public_key=BLSPubkey(Web3.to_bytes(hexstr=public_key)),
+        withdrawal_credentials=Bytes32(withdrawal_credentials),
+        signature=deposit_signature,
+        amount=amount,
+        fork_version=settings.network_config.GENESIS_FORK_VERSION,
+    )

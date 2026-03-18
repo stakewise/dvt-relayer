@@ -169,3 +169,13 @@ cython_debug/
 
 # Sqlite db
 *.db
+
+# Claude
+.claude
+CLAUDE.md
+
+# request files
+*.http
+
+# Public keys
+public_keys.txt

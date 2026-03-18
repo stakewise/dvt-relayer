@@ -1,8 +1,11 @@
+import asyncio
+import itertools
 import json
 import os
 from functools import cached_property
 
 from eth_typing import BlockNumber
+from sw_utils.typings import Bytes32
 from web3.contract import AsyncContract
 from web3.contract.async_contract import (
     AsyncContractEvent,
@@ -49,20 +52,37 @@ class ContractWrapper:
     ) -> EventData | None:
         blocks_range = self.events_blocks_range_interval
 
-        while to_block >= from_block:
-            events = await event.get_logs(
-                from_block=BlockNumber(max(to_block - blocks_range, from_block)),
-                to_block=to_block,
+        # Build all chunk ranges from newest to oldest
+        ranges: list[tuple[BlockNumber, BlockNumber]] = []
+        chunk_to = to_block
+        while chunk_to >= from_block:
+            chunk_from = BlockNumber(max(chunk_to - blocks_range + 1, from_block))
+            ranges.append((chunk_from, chunk_to))
+            chunk_to = BlockNumber(chunk_to - blocks_range)
+
+        # from_block and to_block are both inclusive
+        async def fetch_chunk(chunk_from: BlockNumber, chunk_to: BlockNumber) -> list[EventData]:
+            return await event.get_logs(
+                from_block=chunk_from,
+                to_block=chunk_to,
                 argument_filters=argument_filters,
             )
-            if events:
-                return events[-1]
-            to_block = BlockNumber(to_block - blocks_range - 1)
+
+        # Process chunks in batches (newest-first), abort on first hit
+        for batch in itertools.batched(ranges, settings.event_logs_max_concurrency):
+            batch_results = await asyncio.gather(*[fetch_chunk(f, t) for f, t in batch])
+            for chunk_events in batch_results:
+                if chunk_events:
+                    return chunk_events[-1]
         return None
 
 
 class ValidatorsRegistryContract(ContractWrapper):
     abi_path = 'abi/IValidatorsRegistry.json'
+
+    async def get_registry_root(self) -> Bytes32:
+        """Fetches the latest validators registry root."""
+        return await self.contract.functions.get_deposit_root().call()
 
 
 class KeeperContract(ContractWrapper):
@@ -77,6 +97,13 @@ class KeeperContract(ContractWrapper):
             from_block=from_block or settings.network_config.KEEPER_GENESIS_BLOCK,
             to_block=to_block or await execution_client.eth.get_block_number(),
         )
+
+
+class VaultContract(ContractWrapper):
+    abi_path = 'abi/IEthVault.json'
+
+    async def validators_manager_nonce(self) -> int:
+        return await self.contract.functions.validatorsManagerNonce().call()
 
 
 validators_registry_contract = ValidatorsRegistryContract(

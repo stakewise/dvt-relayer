@@ -1,29 +1,9 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
-from eth_typing import BlockNumber, BLSSignature, HexStr
-
-
-@dataclass
-class NetworkValidator:
-    public_key: HexStr
-    block_number: BlockNumber
+from eth_typing import HexStr
 
 
 @dataclass
 class OraclesExitSignatureShares:
     public_keys: list[HexStr]
     encrypted_exit_signatures: list[HexStr]
-
-
-@dataclass
-class Validator:
-    public_key: HexStr
-    validator_index: int
-    created_at: int
-    exit_signature: BLSSignature | None = None
-
-    # DVT operators' shares
-    exit_signature_shares: dict[int, BLSSignature] = field(default_factory=dict)
-
-    # Oracles' shares
-    oracles_exit_signature_shares: OraclesExitSignatureShares | None = None

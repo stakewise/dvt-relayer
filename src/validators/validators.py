@@ -7,8 +7,9 @@ BLS_SIGNATURE_LENGTH = 96
 
 def validate_bls_pubkey(v: HexStr) -> HexStr:
     try:
-        if len(Web3.to_bytes(hexstr=v)) == BLS_PUBLIC_KEY_BYTES_LENGTH:
-            return v
+        raw = Web3.to_bytes(hexstr=v)
+        if len(raw) == BLS_PUBLIC_KEY_BYTES_LENGTH:
+            return HexStr(Web3.to_hex(raw))
     except Exception:  # nosec
         pass
 

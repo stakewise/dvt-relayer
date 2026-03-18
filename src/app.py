@@ -10,18 +10,17 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 
 from src.app_state import AppState
+from src.common.consensus import get_chain_finalized_head
 from src.common.endpoints import router as common_router
 from src.common.setup_logging import setup_logging, setup_sentry
 from src.common.utils import get_project_version
 from src.config import settings
 from src.protocol_config.tasks import ProtocolConfigTask, update_protocol_config
-from src.validators.database import NetworkValidatorCrud
+from src.relayer.endpoints import router as relayer_router
+from src.relayer.public_keys import PublicKeysManager
+from src.relayer.validators_manager import load_validators_manager_account
 from src.validators.endpoints import router as validators_router
-from src.validators.tasks import (
-    CleanupValidatorsTask,
-    NetworkValidatorsTask,
-    load_genesis_validators,
-)
+from src.validators.tasks import CleanupValidatorsTask, NetworkValidatorsTask
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -36,10 +35,15 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator:
 
     app_state = AppState()
 
-    app_state.validators = {}
+    # load validators manager account
+    validators_manager = load_validators_manager_account()
+    app_state.validators_manager_account = validators_manager
+    logger.info('validators manager address: %s', validators_manager.address)
 
-    NetworkValidatorCrud().setup()
-    await load_genesis_validators()
+    chain_head = await get_chain_finalized_head()
+    app_state.public_keys_manager = await PublicKeysManager.build(chain_head)
+
+    app_state.validators = {}
 
     logger.info('Fetching protocol config...')
     await update_protocol_config()
@@ -47,14 +51,14 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator:
 
     # Note: we create a strong references to the tasks. Helps to avoid garbage collecting.
     protocol_config_task = asyncio.create_task(ProtocolConfigTask().run())
-    network_validators_task = asyncio.create_task(NetworkValidatorsTask().run())
     cleanup_validators_task = asyncio.create_task(CleanupValidatorsTask().run())
+    network_validators_task = asyncio.create_task(NetworkValidatorsTask().run())
 
     yield
 
     protocol_config_task.cancel()
-    network_validators_task.cancel()
     cleanup_validators_task.cancel()
+    network_validators_task.cancel()
 
 
 app = FastAPI(lifespan=lifespan)
@@ -79,6 +83,7 @@ async def log_request_processing_time(request: Request, call_next: Callable) -> 
         logger.info('Request processing time for path %s is %.1f', request.url.path, elapsed)
 
 
+app.include_router(relayer_router)
 app.include_router(validators_router)
 app.include_router(common_router)
 
