@@ -115,6 +115,10 @@ def _encode_consolidations(
 def _create_and_sign_message(
     vault: ChecksumAddress, validators: bytes, validators_registry_root: bytes
 ) -> HexStr:
+    """
+    Note. `validators_registry_root` may accept validators manager nonce encoded as bytes32.
+    The field in contracts is still called validatorsRegistryRoot for backwards compatibility.
+    """
     full_message = {
         'primaryType': 'VaultValidators',
         'types': {
