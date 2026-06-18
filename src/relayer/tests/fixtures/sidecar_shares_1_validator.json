@@ -4,8 +4,26 @@
     "shares": [
       {
         "public_key": "0x8fcf71e5349eb6889c8c37cfa7f82e9b452f49355522b64d8005b8899e5cce0d1c50b2f4f6cdd0814b77f3b381922275",
-        "exit_signature": "0x83ee94d7a3bfa01b8caaf35a982874d7650c767c8dc45d7d492f4d960065320e41eadc32f2b427185ed57f470722ebf40246b0239f05607708c069b2c537414f2d5455434be45d116078abcbc4a171413973609bdfbdec4935478141f6676160",
-        "deposit_signature": "0xa9479a8d7bdba903892061046d43720cdecdb51f6efbec148afc5ac7125ca8e0e9b35d239828d940bdb806749c1c554811c448c4b9327c1053235a127cf2e8be76e87234c8bca0a96d2ed69eb164c9af2a4d104e4f24ec2716062ec1a00998cb"
+        "public_key_shares": [
+          {
+            "share_index": 263,
+            "public_key_share": "0xa7f24055b50f298a01774365d766bb7d619a85e23702be3b878900b219e6de880b99cc68314600712ab9ea90d78309b6"
+          },
+          {
+            "share_index": 280,
+            "public_key_share": "0x9867950aabe42cbbeabe923526fe759defdc237c6b606437c017f87b779be20d97c2c19b5e0cfc925bdb29447c8ac7af"
+          },
+          {
+            "share_index": 281,
+            "public_key_share": "0xb966af491e1fed0e62fa358a98e8550d8c8a751cd012d1704b30a5d9211cec21d06e316aeb8641c09c44529e609567f2"
+          },
+          {
+            "share_index": 282,
+            "public_key_share": "0x8f7e6e11042452ce6b62dae3c22942e017f92973f5f063ac5b5a062882f5195082edba93e7b9b2c234af0cee5647d163"
+          }
+        ],
+        "exit_signature": "0x894bf93892d6fc7939d71931ff6708799cd323b335e1ea9cbbdab522a26a3c1af23a88fa5577757e9f92f4420a27a7a7040250d75ed6bf27da321f7884d952780a235974dcad001247409c525e693f1465b83c6f1e0a5fc418bfd4f40b5f96b5",
+        "deposit_signature": "0x905c26bd07be9fef1ecb7d27a1d887f1daf8cbf3ce7a946bdccfd94101a15db751835c44db4e92332ea33f46d2d239b50f675740846dccf663b22472ef853fca90e660ed03b5ea8704739c3fd359aef3ee7e011e7cf2746d79fa43946e10e748"
       }
     ]
   },
@@ -14,8 +32,26 @@
     "shares": [
       {
         "public_key": "0x8fcf71e5349eb6889c8c37cfa7f82e9b452f49355522b64d8005b8899e5cce0d1c50b2f4f6cdd0814b77f3b381922275",
-        "exit_signature": "0xb4344a9254a015f99731afa0e7e21e86f59b7b25267210043d67718571dc50abdd2ce2af64373c9c5d4938cb64fc11e2096676bc21206a671062517732efe9bc6cec570d0b9fd2b556b77b5ae8a9ee30dcc32206efa17f1e8ae65f3258a532af",
-        "deposit_signature": "0x8165718c19cf2e139670572b8c3b4e2761c97b7d1e635568743574de1a9c104bdd60d126d9922a545e9659577423eba00ccef1ac4f502206f6ee09c77184f21fd9949a1d9721aa469ac616d6dfbd641b2ca07a7b63b73d5b7551d1b193ce81f0"
+        "public_key_shares": [
+          {
+            "share_index": 263,
+            "public_key_share": "0xa7f24055b50f298a01774365d766bb7d619a85e23702be3b878900b219e6de880b99cc68314600712ab9ea90d78309b6"
+          },
+          {
+            "share_index": 280,
+            "public_key_share": "0x9867950aabe42cbbeabe923526fe759defdc237c6b606437c017f87b779be20d97c2c19b5e0cfc925bdb29447c8ac7af"
+          },
+          {
+            "share_index": 281,
+            "public_key_share": "0xb966af491e1fed0e62fa358a98e8550d8c8a751cd012d1704b30a5d9211cec21d06e316aeb8641c09c44529e609567f2"
+          },
+          {
+            "share_index": 282,
+            "public_key_share": "0x8f7e6e11042452ce6b62dae3c22942e017f92973f5f063ac5b5a062882f5195082edba93e7b9b2c234af0cee5647d163"
+          }
+        ],
+        "exit_signature": "0x9603195efdb88136cac2fec04d800f3757873953048fc720d504e7dd4e8bffe80131e95c0f176b4882ff02991279f05201e57c1c75f3a0b81f2af5c87e7609adf08ef45fc8f0e134f4ecb91bfd16e9a0a22f65c4fffa4db3ee2dfafdaf43aed6",
+        "deposit_signature": "0xae119b44bcb333101eb5f663f95697860992f1c516267a4d6811e071503098104782c4be8942ca61e15776cd7795a9bd0ab1f59a7a3a53a37171ad43e8f7515caf7597e1ff2331b962424702ced7b83f9dba05db9e729932822be4f51592c018"
       }
     ]
   },
@@ -24,8 +60,26 @@
     "shares": [
       {
         "public_key": "0x8fcf71e5349eb6889c8c37cfa7f82e9b452f49355522b64d8005b8899e5cce0d1c50b2f4f6cdd0814b77f3b381922275",
-        "exit_signature": "0x94f965f6d0711f91d30e4eb61ac3666df5ac9f57aaf969f86dab15b81d9bc38e045fb43a9e94b77ddb5666d4192ca4cc0eb53d2ec4ceb702e02607abd951c14e1f58fe798e060e6813cd2f6e7a5b37ba94d4ad57d5f134a73181cb4bb618bbc6",
-        "deposit_signature": "0x8a2e477378488a19341474ce7b18593a36c196331fc2cac6b9608a6ccbd82fdfbd275000bbb1c791b358967bef94494c1185d4a3e3e06c7f910441d4b8d57e208a12434bc64cd0817d185d1e616e90436fa1444cf4424ccddd0d75c8a8580351"
+        "public_key_shares": [
+          {
+            "share_index": 263,
+            "public_key_share": "0xa7f24055b50f298a01774365d766bb7d619a85e23702be3b878900b219e6de880b99cc68314600712ab9ea90d78309b6"
+          },
+          {
+            "share_index": 280,
+            "public_key_share": "0x9867950aabe42cbbeabe923526fe759defdc237c6b606437c017f87b779be20d97c2c19b5e0cfc925bdb29447c8ac7af"
+          },
+          {
+            "share_index": 281,
+            "public_key_share": "0xb966af491e1fed0e62fa358a98e8550d8c8a751cd012d1704b30a5d9211cec21d06e316aeb8641c09c44529e609567f2"
+          },
+          {
+            "share_index": 282,
+            "public_key_share": "0x8f7e6e11042452ce6b62dae3c22942e017f92973f5f063ac5b5a062882f5195082edba93e7b9b2c234af0cee5647d163"
+          }
+        ],
+        "exit_signature": "0xb564ae05ac11b82db37e3d68a4fcbc377598033135167a7d6e1deb786c119df6330da498a57fb81ee3ba666cdd0f62640f522c1a4b7e97e31c00dd9cf9a86a6d368195fc262485cb1d48c2fb9303bedf5320c416e25019421baf670a6817ee88",
+        "deposit_signature": "0x9561d680d4064a24bba7bd486dde0d0ab670a0ad1c71d7879888cea80d23cd8f19d599007947c76dcf11aa709b22e8d305ff2ca26e38e145a1f909b42a34d15c88643bbe798b98b9d7e548a8b7b8a91b36fc0429672e35410e06971328ef0526"
       }
     ]
   },
@@ -34,8 +88,26 @@
     "shares": [
       {
         "public_key": "0x8fcf71e5349eb6889c8c37cfa7f82e9b452f49355522b64d8005b8899e5cce0d1c50b2f4f6cdd0814b77f3b381922275",
-        "exit_signature": "0x898008af698b05b594a95f07459c0476db10f8931589ca995e05c1afbc59db1f32c76c62132eed4a135c9724e860938f13e1d5bdaa564f88ea8ecd1d9eb96cb1188067279966fb0a7add6a9e57e9018a417d55cafda1e5ee8644758a2c45b504",
-        "deposit_signature": "0x968517f67c66fc4deebf692a5ff91f98ac540845c9ced5f5180985a3637b0a04b4c67202b499a0794a0ae25590f8387c13c947fe10971f8d5a6df810c04648d12825b74bae9fa5ca2320977aadc4da6b246c0fd97895b9701efa69e22f791efd"
+        "public_key_shares": [
+          {
+            "share_index": 263,
+            "public_key_share": "0xa7f24055b50f298a01774365d766bb7d619a85e23702be3b878900b219e6de880b99cc68314600712ab9ea90d78309b6"
+          },
+          {
+            "share_index": 280,
+            "public_key_share": "0x9867950aabe42cbbeabe923526fe759defdc237c6b606437c017f87b779be20d97c2c19b5e0cfc925bdb29447c8ac7af"
+          },
+          {
+            "share_index": 281,
+            "public_key_share": "0xb966af491e1fed0e62fa358a98e8550d8c8a751cd012d1704b30a5d9211cec21d06e316aeb8641c09c44529e609567f2"
+          },
+          {
+            "share_index": 282,
+            "public_key_share": "0x8f7e6e11042452ce6b62dae3c22942e017f92973f5f063ac5b5a062882f5195082edba93e7b9b2c234af0cee5647d163"
+          }
+        ],
+        "exit_signature": "0x94bec71baeeafa2b813d2d026ff6811786a572819eb38a9dc0487b2d8d832182f3ac319d312860c0b50ea834fe60452b0e6b403b4da9e97f44b1e8df910acf86f4518c09a367a93bfef91f09200ce568bc33b11e78d5317c6f0477da20e33210",
+        "deposit_signature": "0xb63cd2f806b3f0622a66bb60500671caae76cf411b6b4a226d2bdfd2fcb3843e69e0c852e6303f20008fe4669d3391ef13a1ec8987fa988a6a7704c8036ba2a460ff53e7c35da603a2f04278fa18538ce1dea376d0daa11f9a7a67f2284fbb58"
       }
     ]
   }

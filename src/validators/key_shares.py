@@ -13,7 +13,13 @@ from py_ecc.bls.hash_to_curve import hash_to_G2
 from py_ecc.optimized_bls12_381.optimized_curve import (
     G1 as P1,  # don't confuse group name (G1) with primitive element name (P1)
 )
-from py_ecc.optimized_bls12_381.optimized_curve import Z2, add, curve_order, multiply
+from py_ecc.optimized_bls12_381.optimized_curve import (
+    Z1,
+    Z2,
+    add,
+    curve_order,
+    multiply,
+)
 from py_ecc.typing import Optimized_Field, Optimized_Point3D
 from py_ecc.utils import prime_field_inv
 
@@ -102,3 +108,22 @@ def reconstruct_shared_bls_signature(signatures: dict[int, BLSSignature]) -> BLS
                 coef = -coef * j * prime_field_inv(i - j, curve_order) % curve_order
         r = add(r, multiply(sig_point, coef))
     return G2_to_signature(r)
+
+
+def reconstruct_shared_bls_public_key(public_keys: dict[int, BLSPubkey]) -> BLSPubkey:
+    """
+    Reconstructs shared BLS public key from public key shares.
+    G1 counterpart of `reconstruct_shared_bls_signature`.
+
+    public_keys: dict[int, BLSPubkey] - indexes are the share indexes used as
+    Lagrange x-coordinates (same coordinates the signature shares use).
+    """
+    r = Z1
+    for i, key in public_keys.items():
+        key_point = pubkey_to_G1(key)
+        coef = 1
+        for j in public_keys:
+            if j != i:
+                coef = -coef * j * prime_field_inv(i - j, curve_order) % curve_order
+        r = add(r, multiply(key_point, coef))
+    return G1_to_pubkey(r)

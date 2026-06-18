@@ -418,3 +418,69 @@ class TestRegisterSignatureAggregation:
             assert validator['deposit_signature'] is not None
             assert validator['oracles_exit_signature_shares'] is not None
         assert data['validators_manager_signature'] is not None
+
+
+class TestSubmitSignatureSharesValidation:
+    """Validation of incoming signature shares on POST /signatures."""
+
+    def _make_validator(self) -> Validator:
+        return Validator(
+            public_key=PUBKEY_1,
+            vault=Web3.to_checksum_address(DVT_VAULT),
+            validator_index=10,
+            created_at=int(time()),
+            amount=Gwei(32000000000),
+            validator_type=ValidatorType.V2,
+        )
+
+    async def test_rejects_public_key_shares_that_do_not_reconstruct(
+        self, test_client: AsyncClient
+    ) -> None:
+        """Public key shares that don't reconstruct to the validator pubkey are rejected."""
+        validator = self._make_validator()
+        _setup_app_state(validators={PUBKEY_1: validator})
+
+        request = {
+            'share_index': 1,
+            'shares': [
+                {
+                    'public_key': PUBKEY_1,
+                    # Random shares — won't reconstruct to PUBKEY_1
+                    'public_key_shares': [
+                        {'share_index': 1, 'public_key_share': faker.validator_public_key()},
+                        {'share_index': 2, 'public_key_share': faker.validator_public_key()},
+                        {'share_index': 3, 'public_key_share': faker.validator_public_key()},
+                    ],
+                    'exit_signature': faker.validator_signature(),
+                    'deposit_signature': faker.validator_signature(),
+                }
+            ],
+        }
+
+        resp = await test_client.post('/signatures', json=request)
+
+        # Validation happens in the SignatureShareRequest schema -> 422
+        assert resp.status_code == 422
+        assert 'invalid public key shares' in str(resp.json()['detail'])
+        # Nothing stored
+        assert validator.exit_signature_shares == {}
+        assert validator.deposit_signature_shares == {}
+
+    async def test_rejects_missing_public_key_shares_field(self, test_client: AsyncClient) -> None:
+        """The public_key_shares field is required by the schema."""
+        _setup_app_state(validators={PUBKEY_1: self._make_validator()})
+
+        request = {
+            'share_index': 1,
+            'shares': [
+                {
+                    'public_key': PUBKEY_1,
+                    'exit_signature': faker.validator_signature(),
+                    'deposit_signature': faker.validator_signature(),
+                }
+            ],
+        }
+
+        resp = await test_client.post('/signatures', json=request)
+
+        assert resp.status_code == 422

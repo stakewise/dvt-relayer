@@ -3,8 +3,12 @@ import milagro_bls_binding as bls
 from eth_typing import BLSPubkey, BLSSignature, HexStr
 from sw_utils import (
     ConsensusFork,
+    DepositMessage,
+    compute_deposit_domain,
+    compute_signing_root,
     get_exit_message_signing_root,
     is_valid_deposit_data_signature,
+    is_valid_exit_signature,
 )
 from sw_utils.typings import Bytes32
 from web3 import Web3
@@ -12,7 +16,10 @@ from web3.types import Gwei
 
 from src.app_state import AppState
 from src.config import settings
-from src.validators.key_shares import bls_signature_and_public_key_to_shares
+from src.validators.key_shares import (
+    bls_signature_and_public_key_to_shares,
+    reconstruct_shared_bls_public_key,
+)
 from src.validators.typings import OraclesExitSignatureShares
 
 
@@ -97,3 +104,59 @@ def validate_deposit_signature(
         amount=amount,
         fork_version=settings.network_config.GENESIS_FORK_VERSION,
     )
+
+
+def validate_public_key_shares(
+    public_key: HexStr,
+    shares_by_index: dict[int, BLSPubkey],
+) -> bool:
+    """Reconstructs the full validator public key from shares and compares it."""
+    try:
+        reconstructed = reconstruct_shared_bls_public_key(shares_by_index)
+    except Exception:  # nosec
+        return False
+    return reconstructed == BLSPubkey(Web3.to_bytes(hexstr=public_key))
+
+
+def validate_exit_signature_share(
+    validator_index: int,
+    public_key_share: BLSPubkey,
+    exit_signature_share: BLSSignature,
+) -> bool:
+    """Verifies an exit signature share against the operator's public key share."""
+    try:
+        return is_valid_exit_signature(
+            validator_index=validator_index,
+            public_key=public_key_share,
+            signature=exit_signature_share,
+            genesis_validators_root=settings.network_config.GENESIS_VALIDATORS_ROOT,
+            fork=settings.network_config.SHAPELLA_FORK,
+        )
+    except Exception:  # nosec
+        return False
+
+
+def validate_deposit_signature_share(
+    public_key_share: BLSPubkey,
+    public_key: HexStr,
+    withdrawal_credentials: bytes,
+    amount: Gwei,
+    deposit_signature_share: BLSSignature,
+) -> bool:
+    """
+    Verifies a deposit signature share against the operator's public key share.
+
+    The deposit message embeds the full validator public key, so the message is built
+    from `public_key` while verification uses the `public_key_share`.
+    """
+    try:
+        domain = compute_deposit_domain(fork_version=settings.network_config.GENESIS_FORK_VERSION)
+        deposit_message = DepositMessage(
+            pubkey=Web3.to_bytes(hexstr=public_key),
+            withdrawal_credentials=Bytes32(withdrawal_credentials),
+            amount=amount,
+        )
+        message = compute_signing_root(deposit_message, domain)
+        return bls.Verify(public_key_share, message, deposit_signature_share)
+    except Exception:  # nosec
+        return False
