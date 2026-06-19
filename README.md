@@ -38,7 +38,7 @@ In production environment:
 ## Run with Docker
 
 ```bash
-export DVT_RELAYER_VERSION=v1.0.0
+export DVT_RELAYER_VERSION=v1.1.0
 ```
 
 Pull the image:
