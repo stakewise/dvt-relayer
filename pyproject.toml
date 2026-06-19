@@ -14,7 +14,7 @@ click = "==8.1.7"
 prometheus-client = "==0.17.1"
 pyyaml = "==6.0.1"
 python-json-logger = "==2.0.7"
-fastapi = "==0.129.0"
+fastapi = "==0.137.2"
 eciespy = "==0.4.3"
 uvicorn = "==0.32.0"
 
