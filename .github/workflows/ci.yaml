@@ -126,6 +126,11 @@ jobs:
         if: steps.cache-packages.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
 
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9 # v1
+        with:
+          toolchain: stable
+
       - name: Export requirements
         run: poetry export -f requirements.txt --without-hashes | grep -v "git+" > audit_requirements.txt
 
