@@ -51,3 +51,8 @@ validators_manager_key_file: str = config('VALIDATORS_MANAGER_KEY_FILE')
 validators_manager_password_file: str = config('VALIDATORS_MANAGER_PASSWORD_FILE')
 
 public_keys_file: str = config('PUBLIC_KEYS_FILE')
+
+# JWT auth for validators manager endpoints
+jwt_secret_file: str = config('JWT_SECRET_FILE')
+# Max allowed difference between token `iat` claim and current time, in seconds
+jwt_iat_tolerance: int = config('JWT_IAT_TOLERANCE', cast=int, default=60)

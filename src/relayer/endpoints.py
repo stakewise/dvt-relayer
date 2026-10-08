@@ -1,10 +1,11 @@
 from time import time
 
 from eth_typing import BLSSignature, HexStr
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from web3 import Web3
 
 from src.app_state import AppState
+from src.common.auth import verify_jwt
 from src.common.contracts import VaultContract, validators_registry_contract
 from src.relayer import schema
 from src.relayer.typings import Validator, ValidatorType
@@ -15,7 +16,7 @@ from src.relayer.validators_manager import (
     get_validators_manager_signature_withdrawal,
 )
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(verify_jwt)])
 
 
 @router.post('/register')

@@ -10,6 +10,7 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
 
 from src.app_state import AppState
+from src.common.auth import load_jwt_secret
 from src.common.consensus import get_chain_finalized_head
 from src.common.endpoints import router as common_router
 from src.common.setup_logging import setup_logging, setup_sentry
@@ -39,6 +40,8 @@ async def lifespan(app_instance: FastAPI) -> AsyncIterator:
     validators_manager = load_validators_manager_account()
     app_state.validators_manager_account = validators_manager
     logger.info('validators manager address: %s', validators_manager.address)
+
+    app_state.jwt_secret = load_jwt_secret()
 
     chain_head = await get_chain_finalized_head()
     app_state.public_keys_manager = await PublicKeysManager.build(chain_head)
