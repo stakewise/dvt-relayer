@@ -56,3 +56,5 @@ public_keys_file: str = config('PUBLIC_KEYS_FILE')
 jwt_secret_file: str = config('JWT_SECRET_FILE')
 # Max allowed difference between token `iat` claim and current time, in seconds
 jwt_iat_tolerance: int = config('JWT_IAT_TOLERANCE', cast=int, default=60)
+if jwt_iat_tolerance <= 0:
+    raise ValueError('JWT_IAT_TOLERANCE must be positive')

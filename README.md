@@ -74,17 +74,13 @@ PUBLIC_KEYS_FILE=/data/public_keys.txt
 
 ## Authentication
 
-Endpoints `/register`, `/fund`, `/withdraw` and `/consolidate` return Validators Manager signatures
-and should be accessible to the Operator only. They are protected with JWT auth:
+Endpoints `/register`, `/fund`, `/withdraw` and `/consolidate` return Validators Manager signatures and should be accessible to the Operator only. They are protected with JWT auth:
 
 1. Generate a shared secret: `openssl rand -hex 32 > jwt.hex`
 2. Set `JWT_SECRET_FILE=jwt.hex` in the Relayer `.env`
 3. Pass the same secret to the Operator
 
-The Operator sends `Authorization: Bearer <token>` header, where token is signed with HS256
-and contains `iat` claim (issued-at time, seconds).
-Tokens with `iat` differing from the Relayer time by more than `JWT_IAT_TOLERANCE` seconds
-(default 60) are rejected.
+The Operator sends `Authorization: Bearer <token>` header, where token is signed with HS256 and contains `iat` claim (issued-at time, seconds). Tokens with `iat` differing from the Relayer time by more than `JWT_IAT_TOLERANCE` seconds (default 60) are rejected.
 
 Endpoints used by DVT sidecars (`/validators`, `/signatures`) and `/info` are not protected.
 

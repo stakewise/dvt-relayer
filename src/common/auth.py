@@ -52,11 +52,14 @@ async def verify_jwt(
             AppState().jwt_secret,
             algorithms=[JWT_ALGORITHM],
             options={'require': ['iat']},
+            # PyJWT rejects any future `iat` by default, allow clock skew
+            leeway=settings.jwt_iat_tolerance,
         )
     except jwt.PyJWTError as e:
         raise _unauthorized('Invalid token') from e
 
-    if abs(time() - claims['iat']) > settings.jwt_iat_tolerance:
+    # PyJWT validates that `iat` is int-convertible, but returns the raw value
+    if abs(time() - int(claims['iat'])) > settings.jwt_iat_tolerance:
         raise _unauthorized('Stale token')
 
 

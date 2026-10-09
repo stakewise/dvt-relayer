@@ -13,3 +13,4 @@ __pycache__/
 *.env
 /logfile
 /deploy
+jwt.hex
