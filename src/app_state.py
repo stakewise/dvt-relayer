@@ -14,3 +14,4 @@ class AppState(metaclass=Singleton):
     public_keys_manager: PublicKeysManager
     validators: dict[HexStr, Validator]
     validators_manager_account: LocalAccount
+    jwt_secret: bytes

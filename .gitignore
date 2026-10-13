@@ -179,3 +179,6 @@ CLAUDE.md
 
 # Public keys
 public_keys.txt
+
+# JWT secret
+jwt.hex
